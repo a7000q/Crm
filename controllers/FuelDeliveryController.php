@@ -14,7 +14,7 @@ class FuelDeliveryController extends \yii\web\Controller
     	$model = new AddFuelDeliveryForm();
     	$success = false;
 
-    	if ($post['AddFuelDeliveryForm'])
+    	if (isset($post['AddFuelDeliveryForm']))
     		$model->load($post);
 
     	//print_r($model);

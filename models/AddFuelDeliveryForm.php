@@ -16,11 +16,13 @@ class AddFuelDeliveryForm extends Model
     public $temp = [];
     public $mass = [];
 
+    public $remove_section = [];
+
 	public function rules()
     {
         return [
             [['id_trailer', 'id_fuel_module', 'id_fuel_module_section'], 'required'],
-            [['volume', 'density', 'temp', 'mass'], 'each', 'rule' => ['integer']]
+            [['volume', 'density', 'temp', 'mass', 'remove_section'], 'each', 'rule' => ['integer']],
         ];
     }
 
@@ -53,6 +55,15 @@ class AddFuelDeliveryForm extends Model
         if ($this->id_trailer != 0)
         {
             $sections = Sections::find()->where(['id_trailer' => $this->id_trailer])->all();
+
+            foreach($sections as $k => $section)
+            {
+                if (in_array($section->id, $this->remove_section))
+                {
+                    unset($sections[$k]);
+                }
+            }
+
             return $sections;
         }
         else

@@ -10,19 +10,34 @@ class AddFuelDeliveryForm extends Model
 	public $id_trailer = 0;
     public $id_fuel_module = 0;
     public $id_fuel_module_section = 0;
+    public $id_product;
 
     public $volume = [];
     public $density = [];
     public $temp = [];
     public $mass = [];
+    public $pipe = [];
 
     public $remove_section = [];
+    public $driver;
+
+    public $date;
+
+    public $activeSections;
+
+    public $FuelDelivery;
 
 	public function rules()
     {
         return [
-            [['id_trailer', 'id_fuel_module', 'id_fuel_module_section'], 'required'],
-            [['volume', 'density', 'temp', 'mass', 'remove_section'], 'each', 'rule' => ['integer']],
+            [['id_trailer', 'id_fuel_module', 'id_fuel_module_section', 'id_product', 'driver', 'volume', 'temp', 'mass', 'density'], 'required'],
+            [['volume', 'temp', 'remove_section', 'pipe'], 'each', 'rule' => ['integer']],
+            [['temp'], 'each', 'rule' => ['integer', 'max' => 60, 'min' => -40]],
+            [['density'], 'each', 'rule' => ['double', 'max' => 0.9, 'min' => 0.7]],
+            [['mass'], 'each', 'rule' => ['double']],
+            [['id_product', 'date'], 'integer'],
+            ['driver', 'string'],
+            [['mass'], 'each', 'rule' => ['compare', 'compareValue' => 0, 'operator' => '>']]
         ];
     }
 
@@ -36,7 +51,9 @@ class AddFuelDeliveryForm extends Model
             'volume' => 'Объем',
             'density' => 'Плотность', 
             'temp' => 'Температура', 
-            'mass' => 'Масса'
+            'mass' => 'Масса',
+            'id_product' => 'Продукт',
+            'pipe' => 'Учитывать обьем трубы'
         ];
     }
 
@@ -70,6 +87,8 @@ class AddFuelDeliveryForm extends Model
             return false;
     }
 
+
+
     public function getFuelModules()
     {
         $modules = FuelModule::find()->all();
@@ -83,7 +102,12 @@ class AddFuelDeliveryForm extends Model
         if ($this->id_fuel_module != 0)
         {
             $module_sections = FuelModuleSections::find()->where(['id_module' => $this->id_fuel_module])->all();
-            $module_sections = ArrayHelper::map($module_sections, 'id', 'name');
+
+            if (count($module_sections) > 1)
+                $module_sections = ArrayHelper::map($module_sections, 'id', 'name');
+            else
+                $module_sections = $module_sections[0]->id;
+            
 
             return $module_sections;
         }
@@ -93,31 +117,26 @@ class AddFuelDeliveryForm extends Model
 
     public function createDelivery()
     {
-        $user = Yii::$app->user->identity;
-
-        foreach ($this->sections as $section)
+        if ($this->FuelDelivery->validate())
         {
-            if ($this->getActiveSection($section->id))
+            $this->FuelDelivery->save();
+            $id_fuel_delivery = $this->FuelDelivery->id;
+
+            foreach ($this->activeSections as $section)
             {
-                $FuelDelivery = new FuelDelivery();
+                $section->id_fuel_delivery = $id_fuel_delivery;
 
-                $FuelDelivery->id_section = $section->id;
-                $FuelDelivery->id_user = $user->id;
-                $FuelDelivery->date = time();
-                $FuelDelivery->id_fuel_module_section = $this->id_fuel_module_section;
-                $FuelDelivery->volume = $this->getParField($this->volume, $section->id);
-                $FuelDelivery->density = $this->getParField($this->density, $section->id);
-                $FuelDelivery->temp = $this->getParField($this->temp, $section->id);
-                $FuelDelivery->mass = $this->getParField($this->mass, $section->id);
+                $driver = new Drivers();
+                $driver->addDriver($this->driver);
 
-                //print_r($FuelDelivery);
-                if ($FuelDelivery->validate())
-                {
-                    $FuelDelivery->save();
-                    return true;
-                }
+                if ($section->validate())
+                    $section->save();
             }
+
+            return true;
         }
+        
+        return false;
     } 
 
     public function getParField($array, $id)
@@ -143,5 +162,110 @@ class AddFuelDeliveryForm extends Model
             return true;
 
         return false;
+    }
+
+    public function getProducts()
+    {
+        $products = Products::find()->rightJoin(ProductPassports::tableName(), "product_passports.id_product = products.id")->groupBy("products.id")->all();
+        $products = ArrayHelper::map($products, 'id', 'name');
+        
+
+        return $products;
+    }
+
+    public function getProductPassport()
+    {
+        $passport = ProductPassports::find()->where(['id_product' => $this->id_product])->orderBy('date DESC')->one();
+        return $passport;
+    }
+
+    public function getDrivers()
+    {
+        $drivers = Drivers::find()->all();
+        
+        $result = array("");
+        if ($drivers)
+            foreach($drivers as $driver)
+                $result[] = $driver->name;
+        
+        return $result;
+    }
+
+    public function formData()
+    {
+        $this->date = time();
+        $user = Yii::$app->user->identity;
+
+        $this->FuelDelivery = new FuelDelivery();
+        $this->FuelDelivery->scenario = "step1";
+        $this->FuelDelivery->id_user = $user->id;
+        $this->FuelDelivery->date = $this->date;
+        $this->FuelDelivery->id_fuel_module = $this->id_fuel_module;
+        $this->FuelDelivery->id_fuel_module_section = $this->id_fuel_module_section;
+        $this->FuelDelivery->driver = $this->driver;
+        $this->FuelDelivery->id_product_passport = $this->productPassport->id;
+        $this->FuelDelivery->id_trailer = $this->id_trailer;
+        $this->FuelDelivery->gos_number = $this->trailer->gos_number;
+        $this->FuelDelivery->kalibr = 0;
+        $this->FuelDelivery->volume = 0;
+        $this->FuelDelivery->fakt_volume = 0;
+        $this->FuelDelivery->mass = 0;
+        $this->FuelDelivery->fakt_mass = 0;
+        $this->FuelDelivery->diff_mass = 0;
+
+        foreach ($this->sections as $section)
+        {
+            if ($this->getActiveSection($section->id))
+            {   
+                $r = new FuelDeliverySections();
+                $r->volume = $this->getParField($this->volume, $section->id);
+                $r->density = $this->getParField($this->density, $section->id);
+                $r->temp = $this->getParField($this->temp, $section->id);
+                $r->mass = $this->getParField($this->mass, $section->id);
+                $r->kalibr = $section->volume;
+
+                if ($this->getParField($this->pipe, $section->id) == 1)
+                    $r->kalibr += $section->volume_pipe;
+
+                $r->fakt_volume = $r->kalibr - $r->volume;
+                $r->fakt_mass = ($r->fakt_volume * $r->density)/1000;
+                $r->diff_mass = ($r->fakt_mass - $r->mass)*1000;
+                $r->id_section = $section->id;
+                $r->name = $section->name;
+
+
+                $this->activeSections[] = $r;
+                $this->FuelDelivery->kalibr += $r->kalibr;
+                $this->FuelDelivery->volume += $r->volume;
+                $this->FuelDelivery->fakt_volume += $r->fakt_volume;
+                $this->FuelDelivery->mass += $r->mass;
+                $this->FuelDelivery->fakt_mass += $r->fakt_mass;
+                $this->FuelDelivery->diff_mass += $r->diff_mass;
+            }
+        }
+    }
+
+    public function getAddress()
+    {
+        $module = FuelModule::findOne($this->id_fuel_module);
+        return $module->address;
+    }
+
+    public function getTrailer()
+    {
+        $trailer = Trailers::findOne($this->id_trailer);
+        return $trailer;
+    }
+
+    public function getProduct()
+    {
+        $product = Products::findOne($this->id_product);
+        return $product;
+    }
+
+    public function getUserName()
+    {
+        $user = Yii::$app->user->identity;
+        return $user->surname." ".$user->name;
     }
 }

@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
-
+use yii\helpers\Url;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
@@ -19,9 +19,16 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'filterModel' => $searchModel,
         'columns' => [
-            'id',
             'gos_number',
+            [
+                    'label' => 'Секции',
+                    'format' => 'raw',
+                    'value' => function($data){
+                        return Html::a('Открыть', Url::toRoute(['sections/index', 'id' => $data->id]));
+                    }
+            ],
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

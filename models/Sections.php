@@ -42,10 +42,10 @@ class Sections extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'volume' => 'Volume',
-            'volume_pipe' => 'Volume Pipe',
+            'volume' => 'Объем',
+            'volume_pipe' => 'Объем трубы',
             'id_trailer' => 'Id Trailer',
-            'name' => 'Name',
+            'name' => 'Название',
         ];
     }
 }

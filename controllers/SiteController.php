@@ -8,8 +8,9 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use app\models\Trailers;
 
-class SiteController extends Controller
+class SiteController extends CController
 {
     public function behaviors()
     {
@@ -91,4 +92,6 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
+
+    
 }

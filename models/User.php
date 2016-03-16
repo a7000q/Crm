@@ -3,6 +3,9 @@ namespace app\models;
 
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
+use app\models\UserRules;
+use app\models\Roles;
+use app\models\DefaultRoute;
 
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -78,4 +81,55 @@ class User extends ActiveRecord implements IdentityInterface
         }
         return false;
     }
+
+    public function getFull_name()
+    {
+        return $this->surname." ".$this->name;
+    }
+
+    public function isPermissionAction($arr)
+    {
+        if ($this->role == 1)
+            return true;
+
+        if ($arr["c"] == "site" and $arr['a'] == 'logout')
+            return true;
+
+        if ($arr["c"] == "site" and $arr['a'] == 'login')
+            return true;
+
+        $permission = UserRules::find()->where(['id_role' => $this->role, 'controller' => $arr["c"], 'action' => '*'])->one();
+
+        if ($permission)
+            return true;
+
+        $permission = UserRules::find()->where(['id_role' => $this->role, 'controller' => $arr["c"], 'action' => $arr['a']])->one();
+
+        if ($permission)
+            return true;
+    }
+
+
+    public function getRrole()
+    {
+        return $this->hasOne(Roles::className(), ['id' => 'role']);
+    }
+
+    public function getDefaultRoute()
+    {
+        return $this->hasOne(DefaultRoute::className(), ['id_role' => 'role']);
+    }
+
+    public function homeUrl()
+    {
+        $res = ['fuel-delivery/index'];
+
+        if ($this->defaultRoute)
+            $res = [$this->defaultRoute->route];
+
+        return $res;
+    }
+
+    
+
 }

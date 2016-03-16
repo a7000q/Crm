@@ -4,7 +4,7 @@ namespace app\controllers;
 
 use Yii;
 use app\models\Trailers;
-use yii\data\ActiveDataProvider;
+use app\models\TrailersSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -32,11 +32,11 @@ class TrailerController extends Controller
      */
     public function actionIndex()
     {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Trailers::find(),
-        ]);
+        $searchModel = new TrailersSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         return $this->render('index', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }

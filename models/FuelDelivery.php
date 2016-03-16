@@ -3,6 +3,8 @@
 namespace app\models;
 
 use Yii;
+use yii\base\Model;
+use yii\Helpers\ArrayHelper;
 
 /**
  * This is the model class for table "fuel_delivery".
@@ -27,15 +29,21 @@ class FuelDelivery extends \yii\db\ActiveRecord
         return 'fuel_delivery';
     }
 
+    public $typePrice;
+
     /**
      * @inheritdoc
      */
     public function rules()
     {
         return [
-            [['id_section', 'volume', 'density', 'temp', 'mass', 'id_user', 'date', 'id_fuel_module_section'], 'required'],
-            [['id_section', 'id_user', 'date', 'id_fuel_module_section'], 'integer'],
-            [['volume', 'density', 'temp', 'mass'], 'number']
+            [['id_user', 'date', 'id_fuel_module_section', 'driver', 'id_product_passport', 'id_trailer', 'gos_number',
+                'kalibr', 'volume', 'fakt_volume', 'mass', 'fakt_mass', 'diff_mass', 'id_fuel_module'], 'required', 'on' => 'step1'],
+            [['id_user', 'date', 'id_fuel_module_section', 'id_trailer', 'id_product_passport', 'id_fuel_module'], 'integer'],
+            [['volume', 'kalibr', 'mass', 'fakt_volume', 'fakt_mass', 'diff_mass', 'priceLitr'], 'number'],
+            [['driver', 'gos_number'], 'string'],
+            [['price', 'price_track', 'id_partner', 'typePrice', 'id_partner_track'], 'required', 'on' => 'step2'],
+            [['id_fuel_module', 'driver', 'id_product'], 'required', 'on' => 'update']
         ];
     }
 
@@ -46,14 +54,203 @@ class FuelDelivery extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'id_section' => 'Id Section',
-            'volume' => 'Volume',
-            'density' => 'Density',
-            'temp' => 'Temp',
-            'mass' => 'Mass',
             'id_user' => 'Id User',
             'date' => 'Date',
             'id_fuel_module_section' => 'Id Fuel Module Section',
+            'dateText' => 'Дата',
+            'fuelModule.name' => 'Топливный модуль',
+            'fuelModuleSection.name' => 'Секция топливного модуля',
+            'gos_number' => 'Гос. номер', 
+            'fakt_volume' => 'Кол. л. факт',
+            'fakt_mass' => 'Кол. т. факт',
+            'kalibr' => 'Калибровка',
+            'volume' => 'Долив',
+            'driver' => 'Водитель',
+            'user.full_name' => 'Приемщик',
+            'mass' => 'Кол. т. накладная',
+            'diff_mass' => 'Разница',
+            'product.name' => 'Продукт',
+            'id_fuel_module' => 'Топливный модуль',
+            'id_product' => 'Продукт',
+            'id_trailer' => 'Прицеп',
+            'id_fuel_module_section' => 'Секция топливного модуля'
         ];
     }
+
+    public function scenarios()
+    {
+        return [
+            'step1' => ['id_user', 'date', 'id_fuel_module_section', 'driver', 'id_product_passport', 'id_trailer', 'gos_number',
+                'kalibr', 'volume', 'fakt_volume', 'mass', 'fakt_mass', 'diff_mass', 'id_fuel_module'],
+            'step2' => ['price', 'price_track', 'id_partner', 'typePrice', 'priceLitr', 'id_partner_track'],
+            'update' => ['id_fuel_module', 'driver', 'id_product', 'id_trailer', 'id_fuel_module_section']
+        ];
+    }
+
+    public function getFuelDeliverySections()
+    {
+        return $this->hasMany(FuelDeliverySections::className(), ['id_fuel_delivery' => 'id']);
+    }
+
+
+    public function getDateText()
+    {
+        return date("d.m.Y H:i", $this->date);
+    }
+
+    public function getPartner()
+    {
+        return $this->hasOne(Partners::className(), ['id' => 'id_partner']);
+    }
+
+    public function getFuelModule()
+    {
+        return $this->hasOne(FuelModule::className(), ['id' => 'id_fuel_module']);
+    }
+
+    public function getFuelModuleSection()
+    {
+        return $this->hasOne(FuelModuleSections::className(), ['id' => 'id_fuel_module_section']);
+    }
+
+    public function getUser()
+    {
+        return $this->hasOne(User::className(), ['id' => 'id_user']);
+    }
+
+    public function getProductPassport()
+    {
+        return $this->hasOne(ProductPassports::className(), ['id' => 'id_product_passport']);
+    }
+
+    public function getProduct()
+    {
+        return $this->productPassport->product;
+    }
+
+    public function getPartners()
+    {
+        $partners = Partners::find()->all();
+
+        $partners = ArrayHelper::map($partners, 'id', 'name');
+        return $partners;
+    }
+
+    public function correctPrice()
+    {
+        if ($this->typePrice == 2)
+            $this->price_track = $this->price_track/$this->fakt_mass;
+
+        $this->priceLitr = (($this->price + $this->price_track)*$this->mass)/$this->fakt_volume;
+    }
+
+    public function addFuelBalance()
+    {
+        $moduleSection = $this->fuelModuleSection;
+        $moduleSection->updatePriceLitr($this->priceLitr*$this->fakt_volume, $this->fakt_volume);
+        $moduleSection->updateDensity($this->fakt_mass, $this->fakt_volume);
+        $moduleSection->addLitr($this->fakt_volume);
+    }
+
+    public function getId_product()
+    {
+        return $this->product->id;
+    }
+
+    public function setId_product($value)
+    {
+        $this->id_product_passport = $this->productPassportOnProduct($value)->id;
+    }
+
+    public function productPassportOnProduct($value)
+    {
+        $passport = ProductPassports::find()->where(['id_product' => $value])->orderBy('date DESC')->one();
+        return $passport;
+    }
+
+    public function getProducts()
+    {
+        $products = Products::find()->all();
+        $products = ArrayHelper::map($products, 'id', 'name');
+        
+
+        return $products;
+    }
+
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) {
+     
+            if (!$this->validLine())
+                return false;
+     
+            return true;
+        }
+        return false;
+    }
+
+    private function validLine()
+    {
+        $fuel_delivery = FuelDelivery::find()->where(['id_user' => $this->id_user, 'id_fuel_module' => $this->id_fuel_module, 'id_fuel_module_section' => $this->id_fuel_module_section,
+            'driver' => $this->driver, 'id_product_passport' => $this->id_product_passport, 'id_trailer' => $this->id_trailer, 'gos_number' => $this->gos_number,
+            'kalibr' => $this->kalibr, 'volume' => $this->volume, 'fakt_volume' => $this->fakt_volume, 'mass' => $this->mass, 'fakt_mass' => $this->fakt_mass, 
+            'diff_mass' => $this->diff_mass])->one();
+
+        if ($fuel_delivery)
+        {
+            $date_now = date("d.m.Y", $this->date);
+            $date_rec = date("d.m.Y", $fuel_delivery->date);
+
+            if ($date_now == $date_rec)
+                return false;
+        }
+
+        return true;
+    }
+
+    public function getFuelModules()
+    {
+        $modules = FuelModule::find()->all();
+        $modules = ArrayHelper::map($modules, 'id', 'name');
+
+        return $modules;
+    }
+
+    public function getDrivers()
+    {
+        $drivers = Drivers::find()->all();
+        
+        $result = array("");
+        if ($drivers)
+            foreach($drivers as $driver)
+                $result[] = $driver->name;
+        
+        return $result;
+    }
+
+    public function getTrailers()
+    {
+        $trailers = Trailers::find()->all();
+        $trailers = ArrayHelper::map($trailers, 'id', 'gos_number');
+        
+
+        return $trailers;
+    }
+
+    public function getFuelModuleSections()
+    {
+        if ($this->id_fuel_module != 0)
+        {
+            $module_sections = FuelModuleSections::find()->where(['id_module' => $this->id_fuel_module])->all();
+
+            
+            $module_sections = ArrayHelper::map($module_sections, 'id', 'name');
+           
+
+            return $module_sections;
+        }
+        else
+            return false;
+    }
+
 }

@@ -27,7 +27,9 @@ class Trailers extends \yii\db\ActiveRecord
     {
         return [
             [['gos_number'], 'required'],
-            [['gos_number'], 'string', 'max' => 20]
+            [['gos_number'], 'string', 'max' => 20],
+            ['gos_number', 'match', 'pattern' => '/^[a-zA-Z_0-9 ]+$/', 'message' => 'Разрешены только латинские буквы, цифры и подчеркивание.'],
+            ['gos_number', 'unique']
         ];
     }
 
@@ -47,7 +49,6 @@ class Trailers extends \yii\db\ActiveRecord
         return $this->hasMany(Sections::className(), ['id_trailer' => 'id']);
     }
 
-    
 
 
 }

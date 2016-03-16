@@ -21,12 +21,12 @@ $this->params['breadcrumbs'][] = $this->title;
         <?php $form = ActiveForm::begin(['action' => ['delete', 'id' => $model->id],  'enableClientValidation' => false]); ?>
             <?= Html::a('Изменить', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
             <button class="btn btn-danger" data-toggle="confirmation" data-original-title="Вы уверены что хотите удалить данный элемент?" title="">Удалить</button>
+            <?= Html::a('Секции', ['sections/index', 'id' => $model->id], ['class' => 'btn btn-success']) ?>
         <?php ActiveForm::end(); ?>
     </p>
     <?= DetailView::widget([
         'model' => $model,
         'attributes' => [
-            'id',
             'gos_number',
         ],
     ]) ?>

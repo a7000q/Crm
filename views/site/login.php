@@ -49,7 +49,7 @@ $this->title = 'Авторизация';
         <!-- BEGIN LOGO -->
         <div class="logo">
             <a href="index.html">
-                <img src="../assets2/pages/img/logo-big.png" alt="" /> </a>
+                <img src="../assets2/pages/img/logo-big2.png" alt="" /> </a>
         </div>
         <!-- END LOGO -->
         <!-- BEGIN LOGIN -->
@@ -65,13 +65,13 @@ $this->title = 'Авторизация';
                 ],
             ]); ?>
                 <h3 class="form-title font-green"><?= Html::encode($this->title) ?></h3>
-                <?= $form->field($model, 'username')->textInput(['autofocus' => true, 'placeholder' => 'Username']) ?>
+                <?= $form->field($model, 'username')->textInput(['autofocus' => true, 'placeholder' => 'Логин']) ?>
 
-                <?= $form->field($model, 'password')->passwordInput(['placeholder' => 'Password']) ?>
+                <?= $form->field($model, 'password')->passwordInput(['placeholder' => 'Пароль']) ?>
 
 
                 <div class="form-actions">
-                    <?= Html::submitButton('Login', ['class' => 'btn green uppercase', 'name' => 'login-button']) ?>
+                    <?= Html::submitButton('Войти', ['class' => 'btn green uppercase', 'name' => 'login-button']) ?>
                     <label class='rememberme check'>
                         <?= Html::activeCheckbox($model, 'rememberMe');?>
                     </label>

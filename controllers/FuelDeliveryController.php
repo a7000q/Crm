@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use Yii;
 use app\models\AddFuelDeliveryForm;
+
 use app\models\UpdateFuelDeliveryForm;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -11,6 +12,7 @@ use yii\filters\VerbFilter;
 use app\models\FuelDelivery;
 use yii\data\ActiveDataProvider;
 use yii\web\NotFoundHttpException;
+use app\models\SaleFuelDeliveryForm;
 
 
 class FuelDeliveryController extends CController
@@ -130,6 +132,24 @@ class FuelDeliveryController extends CController
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
+    }
+
+    public function actionSaleFuel()
+    {
+        $sale = new SaleFuelDeliveryForm();
+
+        $post = Yii::$app->request->post();
+        if (isset($post['SaleFuelDeliveryForm']))
+            $sale->load($post);
+
+        if (isset($post["saveButton"]))
+        {
+            $sale->sale();
+            $sale = new SaleFuelDeliveryForm();
+        }
+
+
+        return $this->render('sale', ['model' => $sale]);
     }
 
 }

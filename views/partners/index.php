@@ -29,6 +29,13 @@ $this->params['breadcrumbs'][] = $this->title;
                     return Html::a('Открыть', Url::toRoute(['bank-accounts/index', 'id' => $data->id]));
                 }
             ],
+            [
+                'label' => "Прайс",
+                'format' => 'raw',
+                'value' => function($data){
+                    return Html::a('Открыть', Url::toRoute(['prices/index', 'id' => $data->id]));
+                }
+            ],
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

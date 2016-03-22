@@ -11,6 +11,8 @@ use app\models\SensorMonitors;
 use app\models\Tranzactions;
 use app\models\RequestServer;
 use app\models\TestCard;
+use app\models\TestLogs;
+use app\models\TestCalibr;
 
 class ApiController extends CController
 {
@@ -81,7 +83,7 @@ class ApiController extends CController
         return json_encode($result);
     }
 
-    public function actionTerminalFuelBackStep2($tranzaction, $doza)
+    public function actionTerminalFuelBackStep2($tranzaction, $doza, $status = false)
     {
         $tranzaction = Tranzactions::findOne($tranzaction);
 
@@ -118,6 +120,51 @@ class ApiController extends CController
         {
            $card->pull();
         }
+    }
+
+    public function actionTestCalibr()
+    {
+        $time = new \DateTime("2016-03-16 17:04:00");
+        $today = $time->format('Y-m-d H:i:s');
+        $logs = TestLogs::find()->where(["command" => 2, "terminal" => "azsSanki25_3"])->andWhere([">=", "date", $today])->all();
+    
+
+        foreach ($logs as $log) 
+        {
+            $log->pull();
+        }
+    }
+
+    public function actionTestGraf()
+    {
+        $TestCalibr = TestCalibr::find()->orderBy(["date" => SORT_ASC])->all();
+
+        $get = Yii::$app->request->get();
+        $data = "";
+
+        if (isset($get["h"]))
+        {
+            $h = $get["h"];
+            $minH = TestCalibr::minH($h);
+            $maxH = TestCalibr::maxH($h);
+            $data["minH"] = "none";
+            $data["maxH"] = "none";
+
+            if ($minH)
+                $data["minH"] = $minH;
+
+            if ($maxH)
+                $data["maxH"] = $maxH;
+
+            $litr = (($maxH->coordsLitr - $minH->coordsLitr)/($maxH->h - $minH->h))*($h - $minH->h)+$minH->coordsLitr;
+            $data["litr"] = $litr;
+
+            //print_r($maxH);
+
+            $data["h"] = $h;
+        }
+
+        return $this->renderPartial('graf', ['TestCalibr' => $TestCalibr, 'data' => $data]);
     }
 
 

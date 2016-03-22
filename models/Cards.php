@@ -67,18 +67,24 @@ class Cards extends \yii\db\ActiveRecord
 
     }
 
-    public function getSumDoza($id_product, $doza)
+    public function getSumDoza($id_product, $doza, $id_section)
     {
         $price = Prices::getPrice($this->id_partner, $id_product);
 
-        $sum_price = $doza*$price->price;
+        if ($price->id_type == 1)
+            $sum_price = $doza*$price->price;
+        else if ($price->id_type == 2)
+        {
+            $section = FuelModuleSections::findOne($id_section);
+            $sum_price = ($section->last_price + $price->price) * $doza;
+        }
 
         return $sum_price;
     }
 
-    public function pullMoney($id_product, $doza)
+    public function pullMoney($id_product, $doza, $id_section)
     {
-        $sum_price = $this->getSumDoza($id_product, $doza);
+        $sum_price = $this->getSumDoza($id_product, $doza, $id_section);
 
         $this->partner->minusMoney($sum_price);
 

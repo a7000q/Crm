@@ -12,7 +12,7 @@ class SaleReport extends Model
 
 	public function getDataReport()
 	{
-		$tranzactions = Tranzactions::find()->orderBy(["date" => SORT_ASC])->all();
+		$tranzactions = Tranzactions::find()->where(["status" => "1"])->orderBy(["date" => SORT_ASC])->all();
 		$res = "";
 
 		foreach ($tranzactions as $tranz)
@@ -33,11 +33,18 @@ class SaleReport extends Model
 		return $res;
 	}
 
-	public function getFuelModuleName($module)
+	public function getFuelModuleName($module = false)
 	{
-		$name = $module->name;
-		$address = $module->address;
+		if ($module != false)
+		{
+			$name = $module->name;
+			$address = $module->address;
 
-		return $name." ".$address;
+			return $name." ".$address;
+		}
+		else
+			return "";
 	}
+
+
 }

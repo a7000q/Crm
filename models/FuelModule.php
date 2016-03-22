@@ -68,4 +68,9 @@ class FuelModule extends \yii\db\ActiveRecord
             return false;
         }
     } 
+
+    public function getTerminal()
+    {
+        return $this->hasOne(Terminals::className(), ['id_fuel_module' => 'id']);
+    }
 }

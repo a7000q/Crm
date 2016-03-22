@@ -81,7 +81,7 @@ $this->title = 'Потверждение введенных данных';
 					</tr>
 					<tr>
 						<td><b><?if ($section->diff_mass >= 0):?>Излишек<?else:?>Недосдача<?endif;?> в кг.</b></td>
-						<td><?=abs($section->diff_mass)?></td>
+						<td><?=number_format(abs($section->diff_mass), 2)?></td>
 					</tr>
 				</table>
 			</div>

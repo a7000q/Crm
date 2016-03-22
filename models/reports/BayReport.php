@@ -22,7 +22,7 @@ class BayReport extends Model
 			$r["company"] = $fuel->partner->name;
 			$r["fuel_module"] = $this->getFuelModuleName($fuel->fuelModule);
 			$r["litr"] = $fuel->fakt_volume;
-			$r["product_name"] = $fuel->product->short_name;
+			$r["product_name"] = isset($fuel->product)?$fuel->product->short_name : "Не определено";
 			$ssum = ($fuel->price+$fuel->price_track)*$fuel->mass;
 			$r["sum"] = number_format($ssum, 2, ".", "  ");
 			$r["price"] = number_format($ssum/$fuel->fakt_volume, 2);

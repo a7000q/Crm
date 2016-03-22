@@ -16,6 +16,13 @@
             </a>
         </li>
     <?endif;?>
+    <? if (Yii::$app->user->identity->isPermissionAction(['c' => 'fuel-delivery', 'a' => 'sale-fuel'])):?>
+        <li class="nav-item">
+            <a href="<?=Url::toRoute('fuel-delivery/sale-fuel')?>" class="nav-link nav-toggle">
+                <span class="title">Продажа товара</span>
+            </a>
+        </li>
+    <?endif;?>
     <? if (Yii::$app->user->identity->isPermissionAction(['c' => 'trailer', 'a' => 'index'])):?>
         <li class="nav-item">
             <a href="<?=Url::toRoute('trailer/index')?>" class="nav-link nav-toggle">

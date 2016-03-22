@@ -67,7 +67,7 @@ class ProductPassports extends \yii\db\ActiveRecord
         $this->id_product = $id_product;
         if ($this->validate()) {
             $this->date = time();
-            $this->name = $this->product->name."_".date("d-m-Y");
+            $this->name = $this->product->short_name."_".date("d-m-Y");
             $file_name =  $this->name.'.'.$this->file->extension;
 
             if (!is_dir('uploads/product-passports/'.$this->id_product.'/'))

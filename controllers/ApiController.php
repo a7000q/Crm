@@ -13,6 +13,7 @@ use app\models\RequestServer;
 use app\models\TestCard;
 use app\models\TestLogs;
 use app\models\TestCalibr;
+use app\models\SmsCenter;
 
 class ApiController extends CController
 {
@@ -24,7 +25,7 @@ class ApiController extends CController
                 'only' => ['sensor-monitor'],
                 'rules' => [
                     [
-                        'actions' => [],
+                        'actions' => ['sensor-monitor'],
                         'allow' => true,
                         'roles' => ['?'],
                     ],
@@ -42,6 +43,7 @@ class ApiController extends CController
         $SensorMonitors->density = floatval($density);
         $SensorMonitors->water_level = floatval($water_level);
         $SensorMonitors->setSensorId($name);
+        $SensorMonitors->setStatusSensor();
 
         if ($SensorMonitors->validate())
         {
@@ -122,17 +124,29 @@ class ApiController extends CController
         }
     }
 
+    
+
     public function actionTestCalibr()
     {
         $time = new \DateTime("2016-03-16 17:04:00");
         $today = $time->format('Y-m-d H:i:s');
-        $logs = TestLogs::find()->where(["command" => 2, "terminal" => "azsSanki25_3"])->andWhere([">=", "date", $today])->all();
+        $time2 = new \DateTime("2016-03-24 20:25:00");
+        $today2 = $time2->format('Y-m-d H:i:s');
+        $logs = TestLogs::find()->where(["command" => 2, "terminal" => "azsSanki25_3"])->andWhere([">=", "date", $today])
+            ->andWhere(["<=", "date", $today2])->all();
+
+        $sum = 0;
+        $count = 0;
     
 
         foreach ($logs as $log) 
         {
             $log->pull();
+            $sum += $log->litrs;
+            $count++;
         }
+
+        echo $count." ".$sum." ".date("d.m.Y H:i");
     }
 
     public function actionTestGraf()
@@ -164,7 +178,7 @@ class ApiController extends CController
             $data["h"] = $h;
         }
 
-        return $this->renderPartial('graf', ['TestCalibr' => $TestCalibr, 'data' => $data]);
+        return $this->render('graf', ['TestCalibr' => $TestCalibr, 'data' => $data]);
     }
 
 

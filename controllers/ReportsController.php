@@ -12,6 +12,12 @@ class ReportsController extends CController
     {
         $model = new SaleReport();
 
+        $post = Yii::$app->request->post();
+        if (isset($post["SaleReport"]))
+        {
+            $model->load($post);
+        }
+
         return $this->render('sale', ['model' => $model]);
     }
 

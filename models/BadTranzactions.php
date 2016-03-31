@@ -49,4 +49,29 @@ class BadTranzactions extends \yii\db\ActiveRecord
             'date' => 'Date',
         ];
     }
+
+    public function getIsBaseCard()
+    {
+        $card = Cards::findOne(['id_electro' => $this->id_electro]);
+
+        if ($card)
+        {
+            $bad_tranzactions = BadTranzactions::find()->where(['id_electro' => $this->id_electro])->all();
+
+            foreach ($bad_tranzactions as $tranz) {
+                $tranz->delete();
+            }
+
+            $this->delete();
+
+            return true;
+        }
+        else
+            return false;
+    }
+
+    public function getTerminal()
+    {
+        return $this->hasOne(Terminals::className(), ['id' => 'id_terminal']);
+    }
 }

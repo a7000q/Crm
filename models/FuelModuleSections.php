@@ -118,7 +118,7 @@ class FuelModuleSections extends \yii\db\ActiveRecord
     {
         if ($this->sensor)
         {
-            $sensor_monitor = SensorMonitors::find()->where(["id_sensor" => $this->sensor->id])->orderBy(["date" => SORT_DESC])->one();
+            $sensor_monitor = SensorMonitors::find()->where(["id_sensor" => $this->sensor->id])->andWhere(["<>", 'fuel_level', '0'])->andWhere(["<>", 'density', '0'])->orderBy(["date" => SORT_DESC])->one();
 
             if ($sensor_monitor)
             {

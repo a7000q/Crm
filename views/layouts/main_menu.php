@@ -79,4 +79,18 @@
             </ul>
         </li>
     <?endif;?>
+    <? if (Yii::$app->user->identity->isPermissionAction(['c' => 'cards', 'a' => 'bad-cards'])):?>
+        <li class="nav-item">
+            <a href="<?=Url::toRoute('cards/bad-cards')?>" class="nav-link nav-toggle">
+                <span class="title">Неопознанные карты</span>
+            </a>
+        </li>
+    <?endif;?>
+     <? if (Yii::$app->user->identity->isPermissionAction(['c' => 'api', 'a' => 'test-graf'])):?>
+        <li class="nav-item">
+            <a href="<?=Url::toRoute('api/test-graf')?>" class="nav-link nav-toggle">
+                <span class="title">График калибровки</span>
+            </a>
+        </li>
+    <?endif;?>
 </ul>

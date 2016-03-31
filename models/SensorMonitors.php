@@ -67,4 +67,49 @@ class SensorMonitors extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Sensors::className(), ['id' => 'id_sensor']);
     }
+
+    public function getLastRecord()
+    {
+        $sensor_monitors = SensorMonitors::find()->where(['id_sensor' => $this->id_sensor])->orderBy(['date' => SORT_DESC])->one();
+
+        return $sensor_monitors;
+    }
+
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) 
+        {
+            
+            if ($this->valid())
+                return true;
+            else
+                return false;
+        } 
+        else 
+        {
+            return false;
+        }
+    } 
+
+    public function valid()
+    {
+        if ($this->density == 0)
+            return false;
+
+        if ($this->fuel_level == 0)
+            return false;
+
+        if ($this->lastRecord)
+            if ($this->lastRecord->fuel_level == $this->fuel_level)
+                return false;
+
+        return true;
+
+    }
+
+    public function setStatusSensor()
+    {
+        $this->sensor->status = time();
+        $this->sensor->save();
+    }
 }

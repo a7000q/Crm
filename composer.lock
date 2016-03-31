@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "dbd79955157ea16c47ee7572111e73e8",
-    "content-hash": "27f0f0b1338af49d21224ae8fb1f98c6",
+    "hash": "461d8ec69c01b7c39ae61005275e5830",
+    "content-hash": "ab079034a56c39d39ef7d1e9dd3699cf",
     "packages": [
         {
             "name": "bower-asset/bootstrap",
@@ -391,6 +391,49 @@
                 "yii2"
             ],
             "time": "2015-06-28 18:05:41"
+        },
+        {
+            "name": "linslin/yii2-curl",
+            "version": "1.0.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/linslin/Yii2-Curl.git",
+                "reference": "04ef29b920825795699ea95ab6592fa01cff5a4d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/linslin/Yii2-Curl/zipball/04ef29b920825795699ea95ab6592fa01cff5a4d",
+                "reference": "04ef29b920825795699ea95ab6592fa01cff5a4d",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "yiisoft/yii2": "*"
+            },
+            "type": "yii2-extension",
+            "autoload": {
+                "psr-4": {
+                    "linslin\\yii2\\curl\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nils Gajsek",
+                    "email": "info@linslin.org"
+                }
+            ],
+            "description": "Easy and nice cURL extension with RESTful support for Yii2",
+            "keywords": [
+                " curl",
+                "extension",
+                "restful",
+                "yii2"
+            ],
+            "time": "2015-12-21 12:24:16"
         },
         {
             "name": "swiftmailer/swiftmailer",

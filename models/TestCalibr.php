@@ -30,8 +30,8 @@ class TestCalibr extends \yii\db\ActiveRecord
     {
         return [
             [['date', 'litr', 'h', 'density'], 'required'],
-            [['date'], 'integer'],
-            [['litr', 'h', 'density'], 'number'],
+            [['date', 'last'], 'integer'],
+            [['litr', 'h', 'density', 'l'], 'number'],
             ['date', 'unique']
         ];
     }
@@ -70,7 +70,15 @@ class TestCalibr extends \yii\db\ActiveRecord
         $minH = static::minH($h);
         $maxH = static::maxH($h);
 
-        $litr = (($maxH->coordsLitr - $minH->coordsLitr)/($maxH->h - $minH->h))*($h - $minH->h)+$minH->coordsLitr;
+        if ($maxH && $minH)
+            $d = ($maxH->h - $minH->h);
+        else
+            $d = 0;
+
+        if ($d > 0)
+            $litr = (($maxH->coordsLitr - $minH->coordsLitr)/$d)*($h - $minH->h)+$minH->coordsLitr;
+        else
+            $litr = 0;
 
         return $litr;
     }

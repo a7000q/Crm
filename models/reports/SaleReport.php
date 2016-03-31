@@ -9,10 +9,39 @@ use app\models\Tranzactions;
 class SaleReport extends Model
 {
 	public $sales;
+	public $d1;
+	public $d2;
+
+	public function rules()
+    {
+        return [
+            [['d1', 'd2'], 'string']
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+           'd1' => "C",
+           'd2' => "По"
+        ];
+    }
 
 	public function getDataReport()
 	{
-		$tranzactions = Tranzactions::find()->where(["status" => "1"])->orderBy(["date" => SORT_ASC])->all();
+		$tranzactions = Tranzactions::find()->where(["status" => "1"]);
+
+		if ($this->d1)
+			$tranzactions = $tranzactions->andWhere(['>=', 'date', $this->d1Time]);
+
+		if ($this->d2)
+			$tranzactions = $tranzactions->andWhere(['<=', 'date', $this->d2Time]);
+
+		$tranzactions = $tranzactions->orderBy(["date" => SORT_ASC])->all();
+		
 		$res = "";
 
 		foreach ($tranzactions as $tranz)
@@ -44,6 +73,16 @@ class SaleReport extends Model
 		}
 		else
 			return "";
+	}
+
+	public function getD1Time()
+	{
+		return strtotime($this->d1);
+	}
+
+	public function getD2Time()
+	{
+		return strtotime($this->d2);
 	}
 
 

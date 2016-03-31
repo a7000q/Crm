@@ -75,15 +75,22 @@ class TestCard extends \yii\db\ActiveRecord
     public function getCardHex()
     {
         $number = substr($this->CardID, 1);
+        //print_r(expression)
 
         $arr = explode(".", $number);
+
 
         foreach ($arr as $val) 
         {
             $res[] = $this->getHex($val);
         }
 
-        return implode("-", $res);
+        $result = implode("-", $res);
+
+        //print_r($result);
+        //die();
+
+        return $result;
     }
 
     public function getHex($val)
@@ -157,6 +164,15 @@ class TestCard extends \yii\db\ActiveRecord
                 break;
             case "СпецДорСтрой":
                 $res = 4;
+                break;
+            case "ООО Эготранс":
+                $res = 8;
+                break;
+            case "ООО Вектор+":
+                $res = 9;
+                break;
+            case "I tracks":
+                $res = 10;
                 break;
             default:
                 $res = false;

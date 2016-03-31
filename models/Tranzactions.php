@@ -365,7 +365,11 @@ class Tranzactions extends \yii\db\ActiveRecord
 
             $doza_rashet = $l1 - $l2;
 
-            $this->section->last_price = $this->section->last_price * ($this->doza/$doza_rashet);
+            if ($doza_rashet != 0)
+            	$this->section->last_price = $this->section->last_price * ($this->doza/$doza_rashet);
+            else
+            	$this->section->last_price = 0;
+            
             $this->section->save();
         }
 
@@ -378,25 +382,26 @@ class Tranzactions extends \yii\db\ActiveRecord
 
         $sensor = Sensors::findOne(["id_fuel_module_section" => $id_fuel_module_section]);
 
-        $date = time();
-
-        $sensor_monitor = SensorMonitors::find()->where(["id_sensor" => $sensor->id])->andWhere(["<>", "fuel_level", 0])
-            ->andWhere([">=", "date", $date - 15])->all();
-
         $i = 0;
         $h = 0;
         $d = 0;
 
-        foreach ($sensor_monitor as $monitor) 
+        if ($sensor)
         {
-            $h += $monitor->fuel_level;
-            $d += $monitor->density;
-            $i++;
+        	$date = time();
+
+	        $sensor_monitor = SensorMonitors::find()->where(["id_sensor" => $sensor->id])->andWhere(["<>", "fuel_level", 0])->orderBy(["date" => SORT_DESC])->one();
+
+	        
+
+	        if ($sensor_monitor)
+            {
+                $h = $sensor_monitor->fuel_level;
+                $d = $sensor_monitor->density;
+            }
         }
 
-        $h = $h/$i;
-
-        $d = $d/$i;
+        
 
         $res["h"] = $h;
         $res["d"] = $d;

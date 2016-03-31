@@ -23,9 +23,9 @@ use app\models\SensorMonitors;
  */
 class TestLogs extends \yii\db\ActiveRecord
 {
-    /**
-     * @inheritdoc
-     */
+    public $lastRecord;
+
+
     public static function tableName()
     {
         return 'test_logs';
@@ -38,7 +38,7 @@ class TestLogs extends \yii\db\ActiveRecord
     {
         return [
             [['terminal', 'azs', 'command', 'fuel', 'litrs', 'price', 'date', 'CardID', 'NameCompany', 'NameCustomer'], 'required'],
-            [['azs', 'command'], 'integer'],
+            [['azs', 'command', 'lastRecord'], 'integer'],
             [['litrs', 'price'], 'number'],
             [['date'], 'safe'],
             [['terminal', 'CardID'], 'string', 'max' => 16],
@@ -82,6 +82,8 @@ class TestLogs extends \yii\db\ActiveRecord
         $TestCalibr->litr = $this->getCorrectLitr();
         $TestCalibr->h = $h;
         $TestCalibr->density = $density;
+        $TestCalibr->l = $litr;
+        $TestCalibr->last = $this->lastRecord;
 
         if ($TestCalibr->validate())
             $TestCalibr->save();
@@ -139,7 +141,7 @@ class TestLogs extends \yii\db\ActiveRecord
         {
             $date = strtotime($this->date) - 10600 - 900;
 
-            $litr = "50000";
+            $litr = "0";
 
             $h = $this->getSensorMonitor($date)["level"];
 
@@ -160,8 +162,14 @@ class TestLogs extends \yii\db\ActiveRecord
 
         $d1 = $lastRecord->density;
         $l1 = $lastRecord->litr;
-       
 
-        return $l1 - (($d2 * $l2)/$d1);
+        $this->lastRecord = $lastRecord->id;
+       
+        if ($d1 != 0 && $d2 != 0)
+            return $l1 - (($d2 * $l2)/$d1);
+        else
+            return $l1 - $l2; 
     }
+
+    
 }

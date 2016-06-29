@@ -12,7 +12,7 @@ use yii\filters\VerbFilter;
 /**
  * FuelModuleController implements the CRUD actions for FuelModule model.
  */
-class FuelModuleController extends Controller
+class FuelModuleController extends CController
 {
     public function behaviors()
     {
@@ -32,6 +32,7 @@ class FuelModuleController extends Controller
      */
     public function actionIndex()
     {
+
         $dataProvider = new ActiveDataProvider([
             'query' => FuelModule::find(),
         ]);
@@ -117,5 +118,12 @@ class FuelModuleController extends Controller
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
+    }
+
+    public function actionMap()
+    {
+        $FuelModule = FuelModule::find()->where(['<>', 'coords', ''])->all();
+
+        return $this->render('map', ['modules' => $FuelModule]);
     }
 }

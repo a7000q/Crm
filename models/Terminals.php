@@ -4,6 +4,9 @@ namespace app\models;
 
 use Yii;
 use app\models\FuelModuleSections;
+use app\models\SmsCenter;
+use app\models\FuelModule;
+use yii\Helpers\ArrayHelper;
 
 /**
  * This is the model class for table "terminals".
@@ -28,9 +31,11 @@ class Terminals extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'name', 'id_fuel_module'], 'required'],
-            [['id', 'id_fuel_module'], 'integer'],
-            [['name'], 'string', 'max' => 255]
+            [['name', 'id_fuel_module'], 'required'],
+            [['id', 'id_fuel_module', 'counter_date'], 'integer'],
+            [['name'], 'string', 'max' => 255],
+            [['sms'], 'string', 'max' => 10],
+            ['doza', 'number']
         ];
     }
 
@@ -41,13 +46,100 @@ class Terminals extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => 'Name',
-            'id_fuel_module' => 'Id Fuel Module',
+            'name' => 'Название',
+            'id_fuel_module' => 'Топливный модуль',
+            'fuelModule.name' => 'Топливный модуль',
+            'status' => 'Статус',
+            'lastActivity' => 'Последняя активность',
+            'doza' => 'Максимальная доза'
         ];
     }
 
     public function getFuelModule()
     {
         return $this->hasOne(FuelModule::className(), ['id' => 'id_fuel_module']);
+    }
+
+    public function getAvailability()
+    {
+        if ((time()-$this->counter_date) > 400)
+            return false;
+        else
+            return true;
+    }
+
+    public function getStatus()
+    {
+        return $this->availabilityText;
+    }
+
+    public function getAvailabilityText()
+    {
+        if ($this->availability)
+            return "Доступен";
+        else
+            return "Не доступен";
+    }
+
+    public function setVizit()
+    {
+        $this->counter_date = time();
+        $this->save();
+    }
+
+    public function runStatus()
+    {
+        $now = time();
+        $phone = "89600506123";
+
+        if (!$this->availability)
+        {
+            
+            $sms = new SmsCenter();
+
+            $msg = $this->messageStatusDisconnect;
+
+            if ($this->sms == "true")
+            {
+                $sms->send($phone, $msg);
+                $this->sms = "false";
+                $this->save();
+            }
+        }
+        else if ($this->sms == "false")
+        {
+            $this->sms = "true";
+            $this->save();
+            $sms = new SmsCenter();
+            $msg = $this->messageStatusConnect;
+            $sms->send($phone, $msg);
+        }
+    }
+
+    public function getMessageStatusDisconnect()
+    {
+        $txt = $this->fuelModule->name." не доступна";
+
+        return $txt;
+    }
+
+    public function getMessageStatusConnect()
+    {
+        $txt = $this->fuelModule->name." доступна";
+
+        return $txt;
+    }
+
+    public function getFuelModules()
+    {
+        $modules = FuelModule::find()->all();
+        $modules = ArrayHelper::map($modules, 'id', 'name');
+
+        return $modules;
+    }
+
+    public function getLastActivity()
+    {
+        return date("d.m.Y H:i:s", $this->counter_date);
     }
 }

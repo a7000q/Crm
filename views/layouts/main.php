@@ -114,7 +114,35 @@ AppAsset::register($this);
 <script src="../assets/global/plugins/respond.min.js"></script>
 <script src="../assets/global/plugins/excanvas.min.js"></script> 
 <![endif]-->
+<?$this->registerJsFile('js/reports/sale/ajax-fuels.js');?>
 
+<style>
+    .block
+    {
+        width: 200px;
+        height: 120px;
+        background: green;
+        margin-bottom: 10px;
+        text-align: center;
+        padding-top: 5px;
+
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        border-radius: 10px; 
+    }
+
+    #mainBlockFuels
+    {
+        position: fixed;
+        left: 15px; bottom: 0;
+    }
+
+</style>
+
+
+
+<div id="mainBlockFuels">
+
+</div>
 
 <script src='../assets2/global/plugins/jquery.min.js' type="text/javascript"></script>
 <script src='../assets2/global/plugins/bootstrap/js/bootstrap.min.js' type="text/javascript"></script>

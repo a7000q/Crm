@@ -1,0 +1,439 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using System.IO.Ports;
+using System.Threading;
+
+namespace ConsoleTerminal
+{
+    class serialTopaz:Trk
+    {
+        private Boolean litrOk = false;
+        private Boolean litrSumOk = false;
+        private Boolean dolivStatus = false;
+        private string dolivLitr;
+
+        private List<byte> buffer = new List<byte>;
+        
+        public serialTopaz()
+        {
+            reader = new SerialPort(Properties.Settings.Default.portTrk);
+            reader.BaudRate = 4800;
+            reader.Parity = Parity.Even;
+            reader.StopBits = StopBits.Two;
+            reader.DataBits = 7;
+            reader.Handshake = Handshake.None;
+            reader.RtsEnable = true;
+            reader.ReadTimeout = 1000;
+            reader.WriteTimeout = 1000;
+            
+            
+
+            try
+            {
+                reader.Open();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Topaz Port NOT Open" + ex.ToString());
+            }
+
+            reader.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+        }
+
+        public void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+        {
+            int i = 0;
+            List<byte> sbuffer = new List<byte>();
+            byte[] buffer;
+
+            Boolean f1 = false;
+            Boolean f2 = true;
+            byte x;
+
+            do
+            {
+                x = (byte)reader.BaseStream.ReadByte();
+
+                sbuffer.Add(x);
+                buffer = sbuffer.ToArray();
+                writeLogs(BitConverter.ToString(buffer));
+            }
+            while (!validBuffer(buffer));
+
+
+            Console.WriteLine("nozle: " + nozle);
+            Console.WriteLine("litr: "+litr);
+            Console.WriteLine("doliv: "+dolivLitr);
+            Console.WriteLine(BitConverter.ToString(buffer));
+
+            if (validBuffer(buffer))
+            {
+                switch (buffer.Length)
+                {
+                    case 7:
+                        setStatus(buffer);
+                        break;
+                    case 9:
+                        endTranzaction(buffer);
+                        break;
+                    case 17:
+                        getLitr(buffer);
+                        break;
+                    case 37:
+                        getCountLitr(buffer);
+                        break;
+                }
+
+                
+            }
+        }
+
+        private void readedBuffer(ref byte [] buffer)
+        {
+            
+        }
+
+        private void endTranzaction(byte [] buffer)
+        {
+            byte command;
+            byte[] data = { };
+
+            if (buffer[2] == 0x34 && (buffer[4] == 0x30 || buffer[4] == 0x31))
+            {
+
+                if (buffer[4] == 0x31)
+                {
+                    Console.WriteLine("doliv");
+
+                    dolivStatus = true;
+                }
+                Thread.Sleep(200);
+                command = 0x35;
+                reader.Write(request(command, data), 0, 9);
+
+                status = "endTranzaction";
+
+                Thread.Sleep(200);
+
+                command = 0x38;
+                reader.Write(request(command, data), 0, 9);
+            }
+
+           
+
+        }
+
+        protected void getCountLitr(byte [] buffer)
+        {
+            int length = buffer.Length;
+            int i = 2;
+            int j = 0;
+            int size = (buffer.Length - 2 - 3) / 4;
+            byte[] data = new byte[size];
+
+            while (i <= length && buffer[i] != 0x03 && j < size)
+            {
+                data[j] = buffer[i];
+                i = i + 2;
+                j = j + 1;
+            }
+
+            string txt = "";
+            string txtLitr = BitConverter.ToString(data);
+            j = 1;
+            for (i = 0; i < (size - 2); i++)
+            {
+                txt += txtLitr[j].ToString();
+                j = j + 3;
+            }
+
+            txt += ",";
+            txt += txtLitr[j].ToString();
+            txt += txtLitr[j + 3].ToString();
+
+            if (status == "load")
+            {
+                sumLitr = txt;
+                litrSumOk = true;
+            }
+            
+        }
+
+        private void getLitr(byte[] buffer)
+        {
+            if (buffer[2] == 0x30)
+            {
+                string an = BitConverter.ToString(buffer);
+
+                if (dolivStatus)
+                {
+                    dolivLitr = an[13].ToString() + an[19].ToString() + an[25].ToString() + "," + an[31].ToString() + an[37].ToString();
+                    Console.WriteLine("writeDoliv");
+                }
+                else
+                    litr = an[13].ToString() + an[19].ToString() + an[25].ToString() + "," + an[31].ToString() + an[37].ToString();
+
+                //Console.WriteLine(litr);
+            }
+        }
+
+        private void setStatus(byte [] buffer)
+        {
+            byte command = buffer[2];
+
+            switch (command)
+            {
+                case 0x31:
+                    nozle = "up";
+                    litrOk = false;
+                    litrSumOk = false;
+                    break;
+                case 0x30:
+                    nozle = "down";
+                    correctLitr();
+                    break;
+                case 0x32:
+                    confirmDoza();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void correctLitr()
+        {
+            if (status == "endTranzaction" && dolivStatus == true)
+            {
+                litr = (Convert.ToSingle(litr) + Convert.ToSingle(dolivLitr)).ToString();
+                status = "setServer";
+                //setServer();
+                dolivStatus = false;
+            }
+
+            if (status == "load")
+            {
+                dolivLitr = "000,00";
+            }
+        }
+
+
+        private Boolean validBuffer(byte[] buffer)
+        {
+            if (buffer.Length == 2)
+                if (buffer[0] == 0x7F)
+                {
+                    if (buffer[1] != 0x02)
+                        return true;
+                }
+
+
+            if (buffer.Length > 4)
+            {
+                byte sum = chekSum(buffer);
+
+                if (sum == buffer[buffer.Length - 1] && buffer[0] == 0x7F && buffer[1] == 0x02)
+                    return true;
+                else
+                    return false;
+            }
+            else
+                return false;
+        }
+
+
+        private void confirmDoza()
+        {
+            byte command = 0x56;
+            byte[] data = { };
+            reader.Write(request(command, data), 0, 9);
+
+            status = "fuel";
+        }
+
+
+
+        public override void fillMaxDoza()
+        {
+            status = "loadDoza";
+            int doza = Properties.Settings.Default.maxDoza;
+
+            if (doza <= 990)
+            {
+                byte command = 0x54;
+                byte[] data = new byte[5];
+
+                int d0 = doza / 100;
+                doza = doza - d0 * 100;
+                data[0] = getNumberByteTopaz(d0);
+
+                int d1 = doza / 10;
+                data[1] = getNumberByteTopaz(d1);
+                doza = doza - d1 * 10;
+
+                int d2 = doza;
+                data[2] = getNumberByteTopaz(d2);
+
+                data[3] = getNumberByteTopaz(0);
+                data[4] = getNumberByteTopaz(0);
+
+                reader.Write(request(command, data), 0, 9 + data.Length * 2);
+                Thread.Sleep(200);
+
+                data = new byte[0];
+                command = 0x32;
+                reader.Write(request(command, data), 0, 9);
+            }
+            else
+            {
+                Console.WriteLine("Error max doza");
+            }
+
+        }
+
+        private byte getNumberByteTopaz(int number)
+        {
+            byte result = 0x30;
+
+            switch (number)
+            {
+                case 0:
+                    result = 0x30;
+                    break;
+                case 1:
+                    result = 0x31;
+                    break;
+                case 2:
+                    result = 0x32;
+                    break;
+                case 3:
+                    result = 0x33;
+                    break;
+                case 4:
+                    result = 0x34;
+                    break;
+                case 5:
+                    result = 0x35;
+                    break;
+                case 6:
+                    result = 0x36;
+                    break;
+                case 7:
+                    result = 0x37;
+                    break;
+                case 8:
+                    result = 0x38;
+                    break;
+                case 9:
+                    result = 0x39;
+                    break;
+            }
+
+            return result;
+        }
+
+        public void writeStatus()
+        {
+            byte[] data = { };
+            byte command = 0x31;
+
+            if (reader.BytesToRead == 0)
+            {
+                reader.Write(request(command, data), 0, 9 + data.Length);
+                GC.Collect();
+            }
+
+            if (status == "load" && !litrSumOk && !dolivStatus)
+            {
+                Thread.Sleep(200);
+                command = 0x36;
+                reader.Write(request(command, data), 0, 9);
+            }
+
+            if (status == "fuel" || status == "endTranzaction")
+            {
+                Thread.Sleep(200);
+                command = 0x34                                                                                                                                                                                                      ;
+                reader.Write(request(command, data), 0, 9);
+            }
+        }
+
+
+        public static byte[] request(byte command, byte[] data)
+        {
+            byte[] result = new byte[9 + data.Length * 2];
+            result[0] = 0x7F;
+            result[1] = 0x02;
+
+            result[2] = 0x23;
+            result[3] = 0x7F - 0x23;
+
+            byte chekSum = (byte)(0x23 ^ command);
+
+            result[4] = command;
+            result[5] = (byte)(0x7F - command);
+
+            int j = 5;
+
+            //Console.WriteLine(result.Length.ToString());
+
+            if (data.Length != 0)
+            {
+                j = 6;
+                for (int i = 0; i < data.Length; i++)
+                {
+                    result[j] = data[i];
+                    result[j + 1] = (byte)(0x7F - data[i]);
+                    j = j + 2;
+
+                    chekSum ^= data[i];
+                }
+
+                j = j - 1;
+            }
+
+
+            result[j + 1] = 0x03;
+            result[j + 2] = 0x03;
+
+            chekSum ^= 0x03;
+            chekSum |= 0x40;
+
+            result[j + 3] = chekSum;
+
+            return result;
+        }
+
+        private byte chekSum(byte[] buffer)
+        {
+            int lenght = buffer.Length;
+
+            byte result = buffer[2];
+            int i = 4;
+
+
+            while (i < lenght && buffer[i] != 0x03)
+            {
+                result = (byte)(result ^ buffer[i]);
+                i = i + 2;
+            }
+
+
+            result ^= 0x03;
+            result |= 0x40;
+
+            //Console.WriteLine(i-1);
+            return result;
+        }
+
+
+
+        public override void start(object sender)
+        {
+            writeStatus();
+        }
+    }
+}

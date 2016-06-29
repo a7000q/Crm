@@ -23,7 +23,16 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             'name',
             'volume',
+            //'comingSum',
+            'TBalance',
             'product.name',
+            [
+                'label' => 'Остаток',
+                'format' => 'raw',
+                'value' => function($data){
+                    return number_format($data->balance, 2, ',', ' ');
+                }
+            ],
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

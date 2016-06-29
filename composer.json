@@ -17,9 +17,14 @@
         "php": ">=5.4.0",
         "yiisoft/yii2": ">=2.0.5",
         "yiisoft/yii2-bootstrap": "*",
-        "yiisoft/yii2-swiftmailer": "*",
+        "yiisoft/yii2-swiftmailer": "^2.0",
         "kartik-v/yii2-widget-typeahead": "*",
-        "linslin/yii2-curl": "*"
+        "linslin/yii2-curl": "*",
+        "microinginer/yii2-human-formatter": "dev-master",
+        "robregonm/yii2-pdf": "dev-master",
+        "kartik-v/yii2-mpdf": "dev-master",
+        "skeeks/yii2-curl": "*",
+        "cboden/ratchet": "^0.3.5"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

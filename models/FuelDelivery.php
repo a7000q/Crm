@@ -29,7 +29,7 @@ class FuelDelivery extends \yii\db\ActiveRecord
         return 'fuel_delivery';
     }
 
-    public $typePrice;
+    public $typePrice = false;
 
     /**
      * @inheritdoc
@@ -39,11 +39,12 @@ class FuelDelivery extends \yii\db\ActiveRecord
         return [
             [['id_user', 'date', 'id_fuel_module_section', 'driver', 'id_product_passport', 'id_trailer', 'gos_number',
                 'kalibr', 'volume', 'fakt_volume', 'mass', 'fakt_mass', 'diff_mass', 'id_fuel_module'], 'required', 'on' => 'step1'],
-            [['id_user', 'date', 'id_fuel_module_section', 'id_trailer', 'id_product_passport', 'id_fuel_module'], 'integer'],
+            [['id_user', 'date', 'id_fuel_module_section', 'id_trailer', 'id_product_passport', 'id_fuel_module', 'date'], 'integer'],
             [['volume', 'kalibr', 'mass', 'fakt_volume', 'fakt_mass', 'diff_mass', 'priceLitr'], 'number'],
             [['driver', 'gos_number'], 'string'],
             [['price', 'price_track', 'id_partner', 'typePrice', 'id_partner_track'], 'required', 'on' => 'step2'],
-            [['id_fuel_module', 'driver', 'id_product'], 'required', 'on' => 'update']
+            [['id_fuel_module', 'driver', 'id_product'], 'required', 'on' => 'update'],
+            ['dateText', 'safe']
         ];
     }
 
@@ -73,7 +74,11 @@ class FuelDelivery extends \yii\db\ActiveRecord
             'id_fuel_module' => 'Топливный модуль',
             'id_product' => 'Продукт',
             'id_trailer' => 'Прицеп',
-            'id_fuel_module_section' => 'Секция топливного модуля'
+            'id_fuel_module_section' => 'Секция топливного модуля',
+            'id_partner' => 'Поставщик',
+            'id_partner_track' => 'Перевозщик',
+            'price' => 'Цена за тонну',
+            'price_track' => 'Цена перевозки(за тонну)'
         ];
     }
 
@@ -82,8 +87,10 @@ class FuelDelivery extends \yii\db\ActiveRecord
         return [
             'step1' => ['id_user', 'date', 'id_fuel_module_section', 'driver', 'id_product_passport', 'id_trailer', 'gos_number',
                 'kalibr', 'volume', 'fakt_volume', 'mass', 'fakt_mass', 'diff_mass', 'id_fuel_module'],
-            'step2' => ['price', 'price_track', 'id_partner', 'typePrice', 'priceLitr', 'id_partner_track'],
-            'update' => ['id_fuel_module', 'driver', 'id_product', 'id_trailer', 'id_fuel_module_section']
+            'step2' => ['price', 'price_track', 'id_partner', 'typePrice', 'priceLitr', 'id_partner_track', 'date', 'dateText'],
+            'update' => ['id_fuel_module', 'driver', 'id_product', 'id_trailer', 'id_fuel_module_section'],
+            'correct' => ['date', 'price', 'price_track', 'priceLitr'],
+            'crud-update' => ['dateText', 'kalibr', 'volume', 'mass', 'id_partner', 'id_partner_track', 'price', 'price_track']
         ];
     }
 
@@ -96,6 +103,11 @@ class FuelDelivery extends \yii\db\ActiveRecord
     public function getDateText()
     {
         return date("d.m.Y H:i", $this->date);
+    }
+
+    public function setDateText($value)
+    {
+        $this->date = strtotime($value);
     }
 
     public function getPartner()
@@ -125,7 +137,10 @@ class FuelDelivery extends \yii\db\ActiveRecord
 
     public function getProduct()
     {
-        return $this->productPassport->product;
+        if ($this->productPassport)
+            return $this->productPassport->product;
+        else
+            return false;
     }
 
     public function getPartners()
@@ -141,7 +156,10 @@ class FuelDelivery extends \yii\db\ActiveRecord
         if ($this->typePrice == 2)
             $this->price_track = $this->price_track/$this->fakt_mass;
 
-        $this->priceLitr = (($this->price + $this->price_track)*$this->mass)/$this->fakt_volume;
+        if ($this->mass != 0)
+            $this->priceLitr = (($this->price + $this->price_track)*$this->mass)/$this->fakt_volume;
+        else
+            $this->priceLitr = (($this->price + $this->price_track)*$this->fakt_mass)/$this->fakt_volume;
     }
 
     public function addFuelBalance()
@@ -183,10 +201,34 @@ class FuelDelivery extends \yii\db\ActiveRecord
      
             if (!$this->validLine())
                 return false;
+
+            $this->correctData();
      
             return true;
         }
         return false;
+    }
+
+    public function correctData()
+    {
+        $this->fakt_volume = $this->kalibr - $this->volume;
+        
+        $sum = ($this->price + $this->price_track)*$this->mass;
+        $this->priceLitr = $sum/$this->fakt_volume;
+    }
+
+    public function setPriceOnFuelModule()
+    {
+        $sumOstatokMoney = $this->fuelModuleSection->balance * $this->fuelModuleSection->last_price;
+        $sumFaktMoney = $this->priceLitr*$this->fakt_volume;
+        $sum = $sumFaktMoney + $sumOstatokMoney;
+
+        $sumVolume = $this->fuelModuleSection->balance + $this->fakt_volume;
+
+        $price = $sum/$sumVolume;
+
+        $this->fuelModuleSection->last_price = $price;
+        $this->fuelModuleSection->save();
     }
 
     private function validLine()
@@ -251,6 +293,40 @@ class FuelDelivery extends \yii\db\ActiveRecord
         }
         else
             return false;
+    }
+
+    public function getSummDelivery()
+    {
+        if ($this->mass != 0)
+            $result = ($this->price + $this->price_track)*$this->mass;
+        else
+            $result = ($this->price + $this->price_track)*$this->fakt_mass;
+
+        return $result;
+    }
+
+    public function getNextDateOnSection()
+    {
+        $delivery = FuelDelivery::find()->where(['id_fuel_module_section' => $this->id_fuel_module_section])->andWhere(['>', 'date', $this->date])->orderBy(['date' => SORT_ASC])->one();
+
+        if ($delivery)
+            return $delivery->date;
+        else
+            return time();
+    }
+
+    public function beforeDelete()
+    {
+        if (parent::beforeDelete()) 
+        {
+            if ($this->fuelDeliverySections)
+                foreach ($this->fuelDeliverySections as $section) 
+                    $section->delete();
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }

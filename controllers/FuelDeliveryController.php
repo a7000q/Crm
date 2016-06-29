@@ -13,6 +13,7 @@ use app\models\FuelDelivery;
 use yii\data\ActiveDataProvider;
 use yii\web\NotFoundHttpException;
 use app\models\SaleFuelDeliveryForm;
+use app\models\CorrectFuelDelivery;
 
 
 class FuelDeliveryController extends CController
@@ -79,12 +80,17 @@ class FuelDeliveryController extends CController
         {
             $FuelDelivery->scenario = 'step2';
             $FuelDelivery->load($post);
+            //print_r($FuelDelivery);
 
             if ($FuelDelivery->validate())
             {
                 $FuelDelivery->correctPrice();
                 $FuelDelivery->save();
                 $FuelDelivery->addFuelBalance();
+
+                $correct = new CorrectFuelDelivery();
+                $correct->correctDelivery();
+
                 $this->redirect(['comings']);
             }
         }
@@ -140,7 +146,12 @@ class FuelDeliveryController extends CController
 
         $post = Yii::$app->request->post();
         if (isset($post['SaleFuelDeliveryForm']))
+        {
             $sale->load($post);
+
+            if ($sale->fuelModuleSections != false && count($sale->fuelModuleSections) == 1)
+                $sale->id_fuel_module_section = array_keys($sale->fuelModuleSections)[0];
+        }
 
         if (isset($post["saveButton"]))
         {
@@ -150,6 +161,22 @@ class FuelDeliveryController extends CController
 
 
         return $this->render('sale', ['model' => $sale]);
+    }
+
+    public function actionApiDelete($id)
+    {
+        $model = $this->findModel($id);
+        $model->delete();
+
+        return "ok";
+    }
+
+    public function actionDelete($id)
+    {
+        $model = $this->findModel($id);
+        $model->delete();
+
+        return $this->redirect(['comings']);
     }
 
 }

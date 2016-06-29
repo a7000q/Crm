@@ -12,7 +12,7 @@ use yii\filters\VerbFilter;
 /**
  * PartnersController implements the CRUD actions for Partners model.
  */
-class PartnersController extends Controller
+class PartnersController extends CController
 {
     public function behaviors()
     {
@@ -61,7 +61,7 @@ class PartnersController extends Controller
     public function actionCreate()
     {
         $model = new Partners();
-
+        //$model->limit = 0;
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         } else {

@@ -35,6 +35,11 @@ $this->registerJs("$('.fuelLine').click(function(){
                     return $data->diff_mass;
                 }
             ],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'header'=>'Действия', 
+                'template' => '{delete}',
+            ]
         ],
         'rowOptions' => ['class' => "fuelLine"]
     ]); ?>

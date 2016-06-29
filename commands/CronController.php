@@ -10,6 +10,7 @@ namespace app\commands;
 use yii\console\Controller;
 use app\models\Sensors;
 use app\models\SmsCenter;
+use app\models\Terminals;
 
 /**
  * This command echoes the first argument that you have entered.
@@ -25,10 +26,14 @@ class CronController extends Controller
      * This command echoes what you have entered as the message.
      * @param string $message the message to be echoed.
      */
-    public function actionSensorStatus()
+    public function actionStatus()
     {
     	$sensors = Sensors::find()->all();
     	foreach ($sensors as $sensor) 
     		$sensor->runStatus();
+
+        $terminals = Terminals::find()->all();
+        foreach ($terminals as $terminal) 
+            $terminal->runStatus();
     }
 }

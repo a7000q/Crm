@@ -46,9 +46,13 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'phone')->textInput(['maxlength' => true]) ?>
 
+    <?= $form->field($model, 'phoneSms')->textInput(['maxlength' => true]) ?>
+
     <?= $form->field($model, 'director')->textInput(['maxlength' => true]) ?>
 
     <?= $form->field($model, 'osnovanie')->textInput(['maxlength' => true]) ?>
+
+    <?= $form->field($model, 'limit')->textInput(['maxlength' => true]) ?>
 
     <div class="form-group">
         <?= Html::submitButton('Сохранить', ['class' => 'btn btn-success']) ?>

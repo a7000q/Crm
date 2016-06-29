@@ -4,6 +4,7 @@ namespace app\models;
 
 use Yii;
 use app\models\SmsCenter;
+use app\models\SensorMonitors;
 
 /**
  * This is the model class for table "sensors".
@@ -94,5 +95,22 @@ class Sensors extends \yii\db\ActiveRecord
         $txt = "Сенсор ".$this->name." на топливном модуле ".$this->fuelModuleSection->module->name." доступен";
 
         return $txt;
+    }
+
+    public function getMonitors($date1, $date2)
+    {
+        return SensorMonitors::find()->where(['id_sensor' => $this->id])->andWhere('date >= :date1', [':date1' => $date1])->andWhere('date <= :date2', [':date2' => $date2])->asArray()->all();
+    }
+
+    public function getMonitorByDate($date)
+    {
+        $result = SensorMonitors::find()->where(['id_sensor' => $this->id])->andWhere('date >= :date', [':date' => $date])->andWhere('date <= :date2', [':date2' => $date+20])->orderBy('date')->one();
+
+        if ($result)
+            $result = $result->fuel_level;
+        else
+            $result = 0;
+
+        return $result;
     }
 }

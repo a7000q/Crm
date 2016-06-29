@@ -1,5 +1,6 @@
 <?php
 
+use kartik\mpdf\Pdf;
 $params = require(__DIR__ . '/params.php');
 
 $config = [
@@ -38,6 +39,41 @@ $config = [
                     'levels' => ['error', 'warning'],
                 ],
             ],
+        ],
+        'formatter'  => [
+            'class' => 'microinginer\humanFormatter\HumanFormatter',
+            'locale' => 'ru-RU'
+        ],
+        'pdf' => [
+            'class' => Pdf::classname(),
+            'format' => Pdf::FORMAT_A4,
+            'orientation' => Pdf::ORIENT_PORTRAIT,
+            'destination' => Pdf::DEST_BROWSER,
+            // refer settings section for all configuration options
+        ],
+        'response' => [
+            'formatters' => [
+                'pdf' => [
+                    'class' => 'robregonm\pdf\PdfResponseFormatter',
+                    'mode' => '', // Optional
+                    'format' => 'A4',  // Optional but recommended. http://mpdf1.com/manual/index.php?tid=184
+                    'defaultFontSize' => 0, // Optional
+                    'defaultFont' => '', // Optional
+                    'marginLeft' => 15, // Optional
+                    'marginRight' => 15, // Optional
+                    'marginTop' => 16, // Optional
+                    'marginBottom' => 16, // Optional
+                    'marginHeader' => 9, // Optional
+                    'marginFooter' => 9, // Optional
+                    'orientation' => 'Landscape', // optional. This value will be ignored if format is a string value.
+                    'options' => [
+                        // mPDF Variables
+                        // 'fontdata' => [
+                            // ... some fonts. http://mpdf1.com/manual/index.php?tid=454
+                        // ]
+                    ]
+                ],
+            ]
         ],
         'db' => require(__DIR__ . '/db.php'),
         /*

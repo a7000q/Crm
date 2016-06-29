@@ -37,7 +37,8 @@ class CController extends Controller
     public function beforeAction($action)
     {
         if (parent::beforeAction($action)) {
-            
+            //print_r($action);
+            //die();
             if (!Yii::$app->user->isGuest)
             {
                 if ($action->controller->id == 'c' and $action->id == 'index')

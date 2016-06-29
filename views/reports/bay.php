@@ -15,6 +15,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php $form = ActiveForm::begin(); ?>
     	<table class="table table-bordered table-hover">
     		<thead>
+                <td><b>ID</b></td>
     			<td><b>Дата</b></td>
     			<td><b>Гос. номер</b></td>
     			<td><b>Компания</b></td>
@@ -26,7 +27,8 @@ $this->params['breadcrumbs'][] = $this->title;
     		</thead>
 	    	<?foreach ($model->dataReport as $report):?>
 	    		<tr>
-	    			<td><?=$report["date"]?></td>
+	    			<td><?=$report["id"]?></td>
+                    <td><?=$report["date"]?></td>
 	    			<td><?=$report["gos_number"]?></td>
 	    			<td><?=$report["company"]?></td>
 	    			<td><?=$report["fuel_module"]?></td>

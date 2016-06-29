@@ -13,7 +13,7 @@ use yii\filters\VerbFilter;
 /**
  * BankAccountsController implements the CRUD actions for BankAccounts model.
  */
-class BankAccountsController extends Controller
+class BankAccountsController extends CController
 {
     public function behaviors()
     {

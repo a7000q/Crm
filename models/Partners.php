@@ -4,6 +4,10 @@ namespace app\models;
 
 use Yii;
 use app\models\BankAccounts;
+use app\models\Inpayment;
+use app\models\Tranzactions;
+use app\models\Cards;
+use yii\Helpers\ArrayHelper;
 /**
  * This is the model class for table "partners".
  *
@@ -48,8 +52,9 @@ class Partners extends \yii\db\ActiveRecord
             [['inn', 'kpp', 'ogrn', 'okato', 'oktmo', 'okogu', 'okfs', 'okopf', 'okpo'], 'string', 'max' => 20],
             [['full_name', 'address', 'fakt_address', 'name', 'okved', 'email'], 'string', 'max' => 1000],
             [['pravo_forma'], 'string', 'max' => 10],
-            [['phone'], 'string', 'max' => 100],
-            [['director', 'osnovanie'], 'string', 'max' => 255]
+            [['phone', 'phoneSms'], 'string', 'max' => 100],
+            [['director', 'osnovanie'], 'string', 'max' => 255],
+            [['balance', 'limit'], 'number']
         ];
     }
 
@@ -79,7 +84,9 @@ class Partners extends \yii\db\ActiveRecord
             'phone' => 'Телефон',
             'director' => 'Директор',
             'osnovanie' => 'Действует на основании',
-            'balance' => 'Баланс'
+            'balance' => 'Баланс',
+            'phoneSms' => 'Телефон для SMS',
+            'limit' => 'Лимит'
         ];
     }
 
@@ -118,4 +125,64 @@ class Partners extends \yii\db\ActiveRecord
 
         $this->save();
     }
+
+    public function getSumInpayments()
+    {
+        return Inpayment::find()->where(['id_partner' => $this->id])->sum('sum');
+    }
+
+    public function getSumTranzactions()
+    {
+        $cards = $this->cardsArray();
+
+        $tranz = Tranzactions::find()->where(['in', 'id_card', $cards])->all();
+        //print_r($tranz);
+
+        $sum = 0;
+        foreach ($tranz as $t)
+        {
+            $sum += $t->sum;
+        }
+
+        return $sum;
+    }
+
+    public function getCards()
+    {
+       return $this->hasMany(Cards::className(), ['id_partner' => 'id']);
+    }
+
+    public function cardsArray()
+    {
+        $r = "";
+        foreach ($this->cards as $card)
+            $r[] = $card->id;
+
+        return $r;
+    }
+
+    public function calcBalance()
+    {
+        $this->balance = $this->sumInpayments - $this->sumTranzactions;
+        $this->save();
+    }
+
+    static public function arrayAll()
+    {
+        $array = self::find()->all();
+        $array = ArrayHelper::map($array, 'id', 'name');
+
+        return $array;
+    }
+
+    static public function arrayBankAccountsMyCompany()
+    {
+        $company = self::find()->where(['my' => 1])->one();
+
+        $accounts = BankAccounts::find()->where(['id_partner' => $company->id])->all();
+        $array = ArrayHelper::map($accounts, 'id', 'bank_name');
+
+        return $array;
+    }
+
 }

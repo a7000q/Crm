@@ -21,7 +21,9 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'columns' => [
             'inn',
+            'balance',
             'name',
+            'limit',
             [
                 'label' => "Расчетные счета",
                 'format' => 'raw',
@@ -34,6 +36,17 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => 'raw',
                 'value' => function($data){
                     return Html::a('Открыть', Url::toRoute(['prices/index', 'id' => $data->id]));
+                }
+            ],
+            [
+                'label' => "Карты",
+                'format' => 'raw',
+                'value' => function($data)
+                {
+                    if ($data->cards) 
+                        return Html::a('Открыть', Url::toRoute(['cards/index', 'id' => $data->id]));
+                    else
+                        return "";
                 }
             ],
             ['class' => 'yii\grid\ActionColumn'],

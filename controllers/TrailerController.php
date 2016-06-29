@@ -12,7 +12,7 @@ use yii\filters\VerbFilter;
 /**
  * TrailerController implements the CRUD actions for Trailers model.
  */
-class TrailerController extends Controller
+class TrailerController extends CController
 {
     public function behaviors()
     {

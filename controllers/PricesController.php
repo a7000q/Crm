@@ -15,7 +15,7 @@ use yii\web\UploadedFile;
 /**
  * PricesController implements the CRUD actions for Prices model.
  */
-class PricesController extends Controller
+class PricesController extends CController
 {
     public function behaviors()
     {

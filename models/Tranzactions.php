@@ -4,6 +4,8 @@ namespace app\models;
 
 use Yii;
 use yii\base\Model;
+use app\models\SmsCenter;
+
 /**
  * This is the model class for table "tranzactions".
  *
@@ -53,11 +55,15 @@ class Tranzactions extends \yii\db\ActiveRecord
         ];
     }
 
-    public function addTranzactionService($id_section, $id_card, $doza)
+    public function addTranzactionService($date, $id_section, $id_card, $doza)
     {
         $this->id_card = $id_card;
-        $this->date = time();
-        $this->status = 1;
+        $this->date = $date;
+        
+        if ($this->card->type == 1) 
+            $this->status = 1;
+        else
+            $this->status = 3;
 
         $section = $this->getSectionById($id_section);
 
@@ -65,7 +71,11 @@ class Tranzactions extends \yii\db\ActiveRecord
         $this->doza = $doza;
         $this->save();
 
-        $sumOrder = $this->card->pullMoney($section->product->id, $doza);
+        if ($this->card->type == 1) 
+            $sumOrder = $this->card->pullMoney($section->product->id, $doza, $id_section);
+        else
+            $sumOrder = 0;
+
         $section->minusLitr($doza);
 
 
@@ -79,17 +89,30 @@ class Tranzactions extends \yii\db\ActiveRecord
         $TranzactionsHistory->card_name = $this->card->name;
         $TranzactionsHistory->litr = $doza;
         $TranzactionsHistory->id_section = $id_section;
-        $TranzactionsHistory->price_cost = (string)$section->last_price;
+        if ($this->card->type == 1) 
+            $TranzactionsHistory->price_cost = (string)$section->last_price;
+        else
+            $TranzactionsHistory->price_cost = "0";
 
-        $price = Prices::getPrice($this->card->id_partner, $section->id_product);
+        if ($this->card->type == 1) 
+        {
+            $price = Prices::getPrice($this->card->id_partner, $section->id_product);
+            $TranzactionsHistory->price = $price->price;
+        }   
+        else
+            $TranzactionsHistory->price = "0";
 
-        $TranzactionsHistory->price = $price->price;
         $TranzactionsHistory->product_name = $section->product->short_name;
         $TranzactionsHistory->card_electro = $this->card->id_electro;
         $TranzactionsHistory->validate();
         
         $TranzactionsHistory->save();
 
+    }
+
+    public function getDateText()
+    {
+        return date("d.m.Y H:i", $this->date);
     }
 
     public function createTranzaction($id_terminal, $id_electro)
@@ -115,7 +138,10 @@ class Tranzactions extends \yii\db\ActiveRecord
         
         $this->date = time();
 
-        $this->status = 0;
+        if ($card->type == 1)
+            $this->status = 0;
+        else 
+            $this->status = 2;
 
         $this->save();
 
@@ -139,15 +165,24 @@ class Tranzactions extends \yii\db\ActiveRecord
         return $res;
     }
 
-    public function fill($id_section, $doza)
+    public function fill($id_section)
     {
         $section = $this->getSectionById($id_section);
+
+        $doza = $section->module->terminal->doza;
 
         if (!($section and ($this->terminal->fuelModule->id == $section->id_module)))
             return $this->setError(6);
 
-        if (!$this->card->isPermissionFuelDoza($section->product->id, $doza))
+        $r_dz = $this->card->isPermissionFuelDoza($section->product->id, $doza);
+
+        if (!$r_dz)
             return $this->setError(3);
+
+        if ($r_dz === true)
+            $doza = $doza;
+        else
+            $doza = $r_dz;
 
         $sumOrder = $this->card->pullMoney($section->product->id, $doza, $section->id);
         $section->minusLitr($doza);
@@ -178,9 +213,52 @@ class Tranzactions extends \yii\db\ActiveRecord
         $this->status = 1;
         $this->save();
 
-        $this->calibrPrice();
+        //$this->calibrPrice();
 
         $r["status"] = "ok";
+        $r["doza"] = $doza;
+
+        return $r;
+    }
+
+    public function fillPerevod($id_section)
+    {
+        $section = $this->getSectionById($id_section);
+
+        $doza = $section->module->terminal->doza;
+
+        if (!($section and ($this->terminal->fuelModule->id == $section->id_module)))
+            return $this->setError(6);
+
+        $sumOrder = 0;
+        $section->minusLitr($doza);
+
+
+        $TranzactionsHistory = new TranzactionsHistory();
+        $TranzactionsHistory->date = time();
+        $TranzactionsHistory->id_tranzaction = $this->id;
+        $TranzactionsHistory->id_partner = $this->card->id_partner;
+        $TranzactionsHistory->sum = $sumOrder;
+        $TranzactionsHistory->type_tranzaction = 1;
+        $TranzactionsHistory->partner_name = $this->card->partner->name;
+        $TranzactionsHistory->card_name = $this->card->name;
+        $TranzactionsHistory->litr = $doza;
+        $TranzactionsHistory->id_section = $id_section;
+        $TranzactionsHistory->price_cost = "0";
+
+        $TranzactionsHistory->price = "0";
+        $TranzactionsHistory->product_name = $section->product->short_name;
+        $TranzactionsHistory->card_electro = $this->card->id_electro;
+        $TranzactionsHistory->validate();
+       
+        $TranzactionsHistory->save();
+
+        $this->doza = $doza;
+        $this->status = 3;
+        $this->save();
+
+        $r["status"] = "ok";
+        $r["doza"] = $doza;
 
         return $r;
     }
@@ -192,12 +270,22 @@ class Tranzactions extends \yii\db\ActiveRecord
 
     public function getTranzactionHistory()
     {
-        return $this->hasOne(TranzactionsHistory::className(), ['id_tranzaction' => 'id'])->where(["type_tranzaction" => "1"])->orderBy(["date" => SORT_DESC]);
+        return $this->hasOne(TranzactionsHistory::className(), ['id_tranzaction' => 'id'])->where(["type_tranzaction" => "1"])->orderBy(["tranzactions_history.date" => SORT_DESC]);
     }
 
     public function getTerminal()
     {
         return $this->hasOne(Terminals::className(), ['id' => 'id_terminal']);
+    }
+
+    public function getSum()
+    {
+        return $this->tranzactionHistory->sum;
+    }
+
+    public function getId_partner()
+    {
+        return $this->card->id_partner;
     }
 
     public function getCard()
@@ -262,7 +350,11 @@ class Tranzactions extends \yii\db\ActiveRecord
         if (!$terminal)
             return static::setErrorStat(1);
 
-        $tranzaction = Tranzactions::find()->where(['id_terminal' => $id_terminal, 'id_card' => $card->id, 'status' => 1])->orderBy(["date" => SORT_DESC])->one();
+        
+        if ($card->type == 1) 
+            $tranzaction = Tranzactions::find()->where(['id_terminal' => $id_terminal, 'id_card' => $card->id, 'status' => 1])->orderBy(["date" => SORT_DESC])->one();
+        else
+            $tranzaction = Tranzactions::find()->where(['id_terminal' => $id_terminal, 'id_card' => $card->id, 'status' => 3])->orderBy(["date" => SORT_DESC])->one();
 
         if (!$tranzaction)
             return static::setErrorStat(5);
@@ -285,7 +377,7 @@ class Tranzactions extends \yii\db\ActiveRecord
         $TranzactionsHistory->date = time();
         $TranzactionsHistory->id_tranzaction = $this->id;
         $TranzactionsHistory->id_partner = $this->tranzactionHistory->id_partner;
-        $this->calibrPrice("end");
+        //$this->calibrPrice("end");
         $TranzactionsHistory->sum = $this->tranzactionHistory->sum;
         $TranzactionsHistory->type_tranzaction = 2;
         $TranzactionsHistory->partner_name = $this->tranzactionHistory->partner_name;
@@ -328,13 +420,83 @@ class Tranzactions extends \yii\db\ActiveRecord
         $this->status = 1;
         $this->save();
 
+        $this->sendNotification();
+
         $result["status"] = 'ok';
         return $result;
+    }
+
+    public function fuelBackPerevod($doza)
+    {
+        $diff = $this->doza - $doza*1;
+        $this->doza = $doza;
+        $this->save();
+
+        $TranzactionsHistory = new TranzactionsHistory();
+        $TranzactionsHistory->date = time();
+        $TranzactionsHistory->id_tranzaction = $this->id;
+        $TranzactionsHistory->id_partner = $this->tranzactionHistory->id_partner;
+        
+        $TranzactionsHistory->sum = $this->tranzactionHistory->sum;
+        $TranzactionsHistory->type_tranzaction = 2;
+        $TranzactionsHistory->partner_name = $this->tranzactionHistory->partner_name;
+        $TranzactionsHistory->card_name = $this->tranzactionHistory->card_name;
+        $TranzactionsHistory->litr = $this->tranzactionHistory->litr;
+        $TranzactionsHistory->price = (string)$this->tranzactionHistory->price;
+        $TranzactionsHistory->price_cost = (string)$this->tranzactionHistory->price_cost;
+        $TranzactionsHistory->product_name = $this->tranzactionHistory->product_name;
+        $TranzactionsHistory->card_electro = $this->tranzactionHistory->card_electro;
+        $TranzactionsHistory->id_section = $this->tranzactionHistory->id_section;
+        $TranzactionsHistory->validate();
+
+        $TranzactionsHistory->save();
+
+        $this->section->addLitr($TranzactionsHistory->litr);
+
+        $sumOrder = 0;
+        $this->section->minusLitr($doza);
+
+        $TranzactionsHistory = new TranzactionsHistory();
+        $TranzactionsHistory->date = time();
+        $TranzactionsHistory->id_tranzaction = $this->id;
+        $TranzactionsHistory->id_partner = $this->card->id_partner;
+        $TranzactionsHistory->sum = $sumOrder;
+        $TranzactionsHistory->type_tranzaction = 1;
+        $TranzactionsHistory->partner_name = $this->card->partner->name;
+        $TranzactionsHistory->card_name = $this->card->name;
+        $TranzactionsHistory->litr = $doza;
+        $TranzactionsHistory->id_section = $this->tranzactionHistory->id_section;
+        $TranzactionsHistory->price = (string)$this->tranzactionHistory->price;
+        $TranzactionsHistory->price_cost = (string)$this->tranzactionHistory->price_cost;
+        $TranzactionsHistory->product_name = $this->section->product->short_name;
+        $TranzactionsHistory->card_electro = $this->card->id_electro;
+
+        $TranzactionsHistory->save();
+
+        $this->doza = $doza;
+        $this->status = 3;
+        $this->save();
+
+        $result["status"] = 'ok';
+        return $result;
+    }
+
+    public function sendNotification()
+    {
+        $phones = $this->card->partner->phoneSms;
+        $sms = new SmsCenter();
+        $msgSms = $this->terminal->fuelModule->name." ".$this->doza."л. ".$this->card->name;
+        $sms->send($phones, $msgSms);
     }
 
     public function getSection()
     {
         return $this->hasOne(FuelModuleSections::className(), ['id' => 'id_section']);
+    }
+
+    public function getPrice()
+    {
+        return $this->tranzactionHistory->price;
     }
 
     public function getId_section()
@@ -376,6 +538,11 @@ class Tranzactions extends \yii\db\ActiveRecord
 
     }
 
+    public function getTranzHistory()
+    {
+        return $this->hasMany(TranzactionsHistory::className(), ['id_tranzaction' => 'id']);
+    }
+
     public function getSensorSection()
     {
         $id_fuel_module_section = $this->tranzactionHistory->id_section;
@@ -407,6 +574,80 @@ class Tranzactions extends \yii\db\ActiveRecord
         $res["d"] = $d;
 
         return $res;
+    }
+
+    public function beforeDelete()
+    {
+        if (parent::beforeDelete()) 
+        {
+            if ($this->tranzHistory)
+            {
+                foreach ($this->tranzHistory as $tHistory) {
+                    $tHistory->delete();
+                }
+            }
+
+            if ($this->realTimeTranzactions)
+            {
+                $this->realTimeTranzactions->delete();
+            }
+           
+            return true;
+        } 
+        else 
+        {
+            return false;
+        }
+    }
+
+    public function addFill($id_terminal, $date, $id_card, $litr)
+    {
+        $this->date = strtotime($date);
+        $this->status = 1;
+        $this->id_card = $id_card;
+        $this->id_terminal = $id_terminal;
+        $this->doza = $litr;
+
+        $this->save();
+
+        $TranzactionsHistory = new TranzactionsHistory();
+        $TranzactionsHistory->date = strtotime($date);
+        $TranzactionsHistory->id_tranzaction = $this->id;
+        $TranzactionsHistory->id_partner = $this->card->id_partner;
+        $TranzactionsHistory->sum = 0;
+        $TranzactionsHistory->type_tranzaction = 1;
+        $TranzactionsHistory->partner_name = $this->card->partner->name;
+        $TranzactionsHistory->card_name = $this->card->name;
+        $TranzactionsHistory->litr = $this->doza;
+
+        $section = $this->terminal->fuelModule->fuelModuleSections[0];
+
+        $TranzactionsHistory->id_section = $section->id;
+        $TranzactionsHistory->price_cost = (string)$section->last_price;
+
+        $price = Prices::getPrice($this->card->id_partner, $section->id_product);
+
+        $TranzactionsHistory->price = (string)$price->getPriceP($section->id);
+        $TranzactionsHistory->product_name = $section->product->short_name;
+        $TranzactionsHistory->card_electro = $this->card->id_electro;
+        $TranzactionsHistory->validate();
+       
+        $TranzactionsHistory->save();
+    }
+
+    public function getCardName()
+    {
+        return $this->tranzactionHistory->card_name;
+    }
+
+    public function getPartnerName()
+    {
+        return $this->tranzactionHistory->partner_name;
+    }
+
+    public function getRealTimeTranzactions()
+    {
+        return $this->hasOne(RealTimeTranzactions::className(), ['id_tranzaction' => 'id']);
     }
 
 

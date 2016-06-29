@@ -28,6 +28,33 @@ $this->params['breadcrumbs'][] = $this->title;
                 }
             ],
             'address',
+            'terminal.id',
+            'tBalance',
+            'lastPrice',
+            'averageLitr',
+            'maxLitr',
+            [
+                'label' => 'Статус',
+                'format' => 'raw',
+                'value' => function($data){
+                    if ($data->terminal)
+                    {
+                        $color = ($data->terminal->status == 'Доступен')?'green':'red';
+                        $color = "color: ".$color;
+                        $result = Html::tag('b', $data->terminal->status, ['style' => $color]);
+
+                        if ($data->requiredFuel && $data->terminal->status == 'Доступен')
+                        {
+                            $color = "color: red;";
+                            $result = Html::tag('b', "Требуется топливо", ['style' => $color]);
+                        }
+
+                        return $result;
+                    }
+                    else
+                        return '(не задано)';
+                }
+            ],
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>

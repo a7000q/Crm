@@ -30,7 +30,9 @@ class DatePickerAsset extends AssetBundle
         "../assets2/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js",
         "../assets2/global/plugins/bootstrap-timepicker/js/bootstrap-timepicker.min.js",
         "../assets2/global/plugins/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js",
-        "../assets2/global/plugins/clockface/js/clockface.js"
+        "../assets2/global/plugins/clockface/js/clockface.js",
+        '../assets2/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.ru.min.js',
+        '../assets2/global/plugins/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.ru.js'
     ];
     public $depends = [
        

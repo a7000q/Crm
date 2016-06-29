@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use app\models\Tranzactions;
 
 /**
  * This is the model class for table "tranzactions_history".
@@ -63,5 +64,10 @@ class TranzactionsHistory extends \yii\db\ActiveRecord
             'product_name' => 'Product Name',
             'card_electro' => 'Card Electro',
         ];
+    }
+
+    public function getTranzaction()
+    {
+        return $this->hasOne(Tranzactions::className(), ['id' => 'id_tranzaction']);
     }
 }

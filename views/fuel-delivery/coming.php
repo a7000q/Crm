@@ -9,6 +9,9 @@ use kartik\typeahead\TypeaheadBasic;
 use kartik\typeahead\Typeahead;
 Select2Asset::register($this); 
 
+use app\assets\DatePickerAsset;
+DatePickerAsset::register($this);
+
 $this->registerJs("$('.blankWindow').attr('target','_blank');", yii\web\View::POS_READY);
 
 $this->registerJs("$('#partners').select2({
@@ -23,6 +26,13 @@ $this->registerCss(".radio-list > .radio{ width:40%; }");
 
 $this->registerCss(".select2{ width:40%; }");
 
+
+$this->registerJs("$('#date').datetimepicker({
+                    language: 'ru',
+                    format: 'dd.mm.yyyy hh:ii',
+                    autoclose: true,
+                    isRTL: App.isRTL()
+                });", yii\web\View::POS_READY);
 
 $this->title = "Приход товара №".$FuelDelivery->id;
 $this->params['breadcrumbs'][] = ['label' => 'Приход товара', 'url' => ['comings']];
@@ -44,8 +54,8 @@ $this->params['breadcrumbs'][] = $this->title;
             'product.name',
             [
                 'label' => 'Паспорт продукта',
-                'value' => Html::a($FuelDelivery->productPassport->name, $FuelDelivery->productPassport->src, ['class' => 'blankWindow']),
-                'format' => 'html'
+                'value' => ($FuelDelivery->productPassport)?Html::a($FuelDelivery->productPassport->name, $FuelDelivery->productPassport->src, ['class' => 'blankWindow']):"(не задано)",
+                'format' => 'raw'
             ],
             'gos_number',
             'kalibr',
@@ -59,6 +69,12 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php $form = ActiveForm::begin(['fieldConfig' => ['template' => '{input}']]); ?>
         <table class="table table-bordered table-hover">
+            <tr>
+                <td><b>Укажите дату</b></td>
+                <td>
+                    <?= $form->field($FuelDelivery, 'dateText')->textInput(['placeholder' => 'Укажите дату', 'id' => 'date']) ?>
+                </td>
+            </tr>
             <tr>
                 <td>
                     <?= $form->field($FuelDelivery, 'price')->textInput(['value' => '', 'placeholder' => 'Цена за тонну']) ?>

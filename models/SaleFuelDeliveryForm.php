@@ -8,19 +8,40 @@ use yii\base\Model;
 class SaleFuelDeliveryForm extends Model
 {
     public $count_litrs;
-    public $id_partner;
+    public $id_partner = false;
     public $id_fuel_module;
     public $id_fuel_module_section = false;
+    public $id_card = false;
+    public $date = false;
 	
     public function rules()
     {
         return [
             [['count_litrs', 'id_partner', 'id_fuel_module'], 'required'],
            ['count_litrs', 'number'],
-           [['id_partner', 'id_fuel_module', 'id_fuel_module_section'], 'integer']
+           [['id_partner', 'id_fuel_module', 'id_fuel_module_section', 'id_card', 'date'], 'integer'],
+           ['dateText', 'date']
         ];
     }
 
+
+    public function getDateText()
+    {
+        if ($this->date)
+            return date("d.m.Y H:i", $this->date);
+        else
+            return "";
+    }
+
+    public function setDateText($value)
+    {
+        $this->date = strtotime($value);
+    }
+
+    public function init()
+    {
+        $this->date = "";
+    }
 
     public function attributeLabels()
     {
@@ -32,7 +53,11 @@ class SaleFuelDeliveryForm extends Model
     public function sale()
     {
         $tranzaction = new Tranzactions();
-        $tranzaction->addTranzactionService($this->id_fuel_module_section, $this->card->id, $this->count_litrs);
+
+        if (!$this->date)
+            $this->date = time();
+
+        $tranzaction->addTranzactionService($this->date, $this->id_fuel_module_section, $this->card->id, $this->count_litrs);
     }
 
     public function getFuelModules()
@@ -71,19 +96,30 @@ class SaleFuelDeliveryForm extends Model
 
     public function getCard()
     {
-        $card = Cards::find()->where(['id_partner' => $this->id_partner, 'id_txt' => '0', 'name' => 'XXXX', 'id_electro' => 'XXXX'])->one();
+        if ($this->id_card == false)
+            $card = Cards::find()->where(['id_partner' => $this->id_partner, 'id_txt' => 9999999, 'name' => 'XXXX', 'id_electro' => 'XXXX-'.$this->id_partner])->one();
+        else
+            $card = Cards::findOne($this->id_card);
 
         if (!$card)
         {
             $card = new Cards();
-            $card->id_txt = 0;
-            $card->id_electro = "XXXX";
+            $card->id_txt = 9999999;
+            $card->id_electro = "XXXX-".$this->id_partner;
             $card->id_partner = $this->id_partner;
             $card->name = "XXXX";
             $card->save();
         }
 
         return $card;
+    }
+
+    public function getCards()
+    {
+        $cards = Cards::find()->where(['id_partner' => $this->id_partner])->andWhere(['<>', 'id_txt', 9999999])->andWhere(['<>', 'name', 'XXXX'])->andWhere(['<>', 'id_electro', "XXXX-".$this->id_partner])->all();
+        $cards = ArrayHelper::map($cards, 'id', 'name', 'id_txt');
+
+        return $cards;
     }
 
 }

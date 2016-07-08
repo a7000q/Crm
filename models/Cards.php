@@ -21,7 +21,7 @@ use app\models\TypeMeasurement;
 class Cards extends \yii\db\ActiveRecord
 {
     
-    public $cardNumber = false;
+    public $cardNumber = "0";
     /**
      * @inheritdoc
      */
@@ -41,7 +41,7 @@ class Cards extends \yii\db\ActiveRecord
             [['id_electro'], 'string', 'max' => 100],
             [['name'], 'string'],
             ['id_electro', "unique"],
-            ['cardNumber', 'integer']
+            ['cardNumber', 'string']
         ];
     }
 
@@ -234,36 +234,12 @@ class Cards extends \yii\db\ActiveRecord
     {
         if ($this->cardNumber)
         {
-            $electro = base_convert($this->cardNumber, 10, 16);
+            $hex_bool = strpos($this->cardNumber, "-");
 
-            $id_electro = "00-";
-
-            $number = $electro; 
-            $array = array(); 
-
-            while ($number > 0) 
-            { 
-                $array[] = $number % 10; 
-                $number = intval($number / 10);  
-            } 
-
-            $array = array_reverse($array); 
-
-            $i = 0;
-
-            while (count($array) > $i) 
-            {
-                $id_electro .= $array[$i];
-
-                if (isset($array[$i + 1]))
-                    $id_electro .= $array[$i + 1];
-
-                $id_electro .= "-";
-
-                $i += 2;
-            }
-
-            $id_electro = substr($id_electro, 0, -1);
+            if (!$hex_bool)
+            	$id_electro = $this->getHex($this->cardNumber);
+            else
+            	$id_electro = $this->cardNumber;
 
             $this->id_electro = $id_electro;
 
@@ -273,8 +249,36 @@ class Cards extends \yii\db\ActiveRecord
 
                 return true;
             }
+
         }
 
         return false;
+    }
+
+    private function getHex($number)
+    {
+    	$hex = array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F");
+    	$res = array();
+
+    	while ($number > 0)
+    	{
+    		$res[] = $hex[$number % 16];
+    		$number = intval($number/16);
+    	}
+
+    	$res = array_reverse($res);
+    	$result = array();
+
+    	for ($i = 0; $i < count($res); $i += 2)
+    	{
+    		$result[] = $res[$i].$res[$i+1];
+    	}
+
+    	if (count($result) < 4)
+    		array_unshift($result, "00");
+
+    	$result = implode("-", $result);
+
+  		return $result;
     }
 }

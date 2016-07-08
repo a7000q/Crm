@@ -50,7 +50,10 @@ class AddCardForm extends Model
         $card->id_partner = $this->id_partner;
         $card->name = $this->name;
 
-        $card->save();
+        if ($card->validate())
+        {
+            $card->save();
+        }
 
         $tranz = BadTranzactions::find()->all();
         foreach ($tranz as $t) {

@@ -145,6 +145,7 @@ AppAsset::register($this);
 </div>
 
 <script src='../assets2/global/plugins/jquery.min.js' type="text/javascript"></script>
+<script src='../js/jquery.pjax.js' type="text/javascript"></script>
 <script src='../assets2/global/plugins/bootstrap/js/bootstrap.min.js' type="text/javascript"></script>
 <script src='../assets2/global/plugins/js.cookie.min.js' type="text/javascript"></script>
 <script src="../assets2/global/plugins/bootstrap-hover-dropdown/bootstrap-hover-dropdown.min.js" type="text/javascript"></script>

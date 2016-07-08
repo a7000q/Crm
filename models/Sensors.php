@@ -43,14 +43,25 @@ class Sensors extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => 'Name',
+            'name' => 'Название',
             'id_fuel_module_section' => 'Id Fuel Module Section',
+            'statusDate' => 'Последнее обновление',
+            'fuelModuleSection.module.name' => 'Топливный модуль',
+            'h' => 'Уровень топлива',
+            'density' => 'Плотность',
+            'temp' => 'Температура',
+            'water_level' => 'Уровень воды'
         ];
     }
 
     public function getFuelModuleSection()
     {
         return $this->hasOne(FuelModuleSections::className(), ['id' => 'id_fuel_module_section']);
+    }
+
+    public function getStatusDate()
+    {
+        return date("d.m.Y H:i:s", $this->status);
     }
 
     public function runStatus()

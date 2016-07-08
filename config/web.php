@@ -9,6 +9,14 @@ $config = [
     'bootstrap' => ['log'],
     'language' => 'ru-RU',
     'defaultRoute' => 'c',
+    'aliases' => [
+    	'@api' => '@app/modules/api'
+    ],
+    'modules' => [
+    	'r-api' => [
+    		'class' => 'app\modules\api\Api'
+    	],
+    ],
     'components' => [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation

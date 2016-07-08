@@ -158,4 +158,18 @@
             </a>
         </li>
     <?endif;?>
+    <? if (Yii::$app->user->identity->isPermissionAction(['c' => 'reports', 'a' => 'chart-balance'])):?>
+        <li class="nav-item">
+            <a href="<?=Url::toRoute('reports/chart-balance')?>" class="nav-link nav-toggle">
+                <span class="title">График движения остатков</span>
+            </a>
+        </li>
+    <?endif;?>
+    <? if (Yii::$app->user->identity->isPermissionAction(['c' => 'sensor', 'a' => '*'])):?>
+        <li class="nav-item">
+            <a href="<?=Url::toRoute('sensor/index')?>" class="nav-link nav-toggle">
+                <span class="title">Уровнемеры</span>
+            </a>
+        </li>
+    <?endif;?>
 </ul>
